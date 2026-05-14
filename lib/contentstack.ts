@@ -24,7 +24,7 @@ const stack = Contentstack.Stack({
 // ─────────────────────────────────────────────────────────────────────────────
 // Generic query helper – avoids repeating the promise dance everywhere
 // ─────────────────────────────────────────────────────────────────────────────
-function query<T>(ct: string): ReturnType<typeof stack.ContentType> {
+function query(ct: string) {
   return stack.ContentType(ct).Query();
 }
 

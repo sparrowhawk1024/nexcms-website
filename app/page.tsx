@@ -5,7 +5,10 @@ import ProductCard from "@/components/ProductCard";
 export const revalidate = 60;
 
 // Static filter sidebar sections
-const SIDEBAR = [
+type SidebarItem = { label: string; href: string; checkbox?: boolean };
+type SidebarSection = { title: string; items: SidebarItem[] };
+
+const SIDEBAR: SidebarSection[] = [
   {
     title: "Deals & Drops",
     items: [{ label: "Neon Summer Drops", href: "#" }],
