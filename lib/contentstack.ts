@@ -144,14 +144,18 @@ export async function getAllProducts(opts?: {
   return result[0] as Product[];
 }
 
-/** Fetch a single product by its slug */
-export async function getProductBySlug(slug: string): Promise<Product | null> {
-  const result = await query("product")
-    .where("slug", slug)
-    .toJSON()
-    .find();
-  const products = result[0] as Product[];
-  return products.length > 0 ? products[0] : null;
+/** Fetch a single product by its uid */
+export async function getProductByUid(uid: string): Promise<Product | null> {
+  try {
+    const entry = await stack
+      .ContentType("product")
+      .Entry(uid)
+      .toJSON()
+      .fetch();
+    return entry as Product;
+  } catch {
+    return null;
+  }
 }
 
 /** Paginated product listing */

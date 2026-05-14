@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { getProductBySlug, getAllProducts } from "@/lib/contentstack";
+import { getProductByUid, getAllProducts } from "@/lib/contentstack";
 import ProductCard from "@/components/ProductCard";
 import type { Metadata } from "next";
 
@@ -13,12 +13,12 @@ interface Props {
 
 export async function generateStaticParams() {
   const products = await getAllProducts().catch(() => []);
-  return products.map((p) => ({ uid: p.slug }));
+  return products.map((p) => ({ uid: p.uid }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { uid } = await params;
-  const product = await getProductBySlug(uid).catch(() => null);
+  const product = await getProductByUid(uid).catch(() => null);
   if (!product) return { title: "Product not found" };
   return {
     title: product.title,
@@ -38,7 +38,7 @@ function fmt(n: number) {
 export default async function ProductDetailPage({ params }: Props) {
   const { uid } = await params;
   const [product, allProducts] = await Promise.all([
-    getProductBySlug(uid).catch(() => null),
+    getProductByUid(uid).catch(() => null),
     getAllProducts().catch(() => []),
   ]);
 
