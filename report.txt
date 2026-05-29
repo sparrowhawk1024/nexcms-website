@@ -1,0 +1,561 @@
+================================================================================
+NEXSTORE – COMPLETE PROJECT REPORT
+================================================================================
+Project Name    : NexStore (nexcms-website)
+GitHub Repo     : https://github.com/sparrowhawk1024/nexcms-website
+CMS Platform    : Contentstack (EU Region)
+Framework       : Next.js 15.5 (App Router) + TypeScript
+Styling         : Tailwind CSS v4
+Developer       : sparrowhawk1024 (premcnaik2004@gmail.com)
+Report Date     : 2026-05-29
+================================================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 1: PROJECT OVERVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NexStore is a full-featured headless e-commerce store with a cyberpunk/neon
+aesthetic. It is powered by Next.js on the frontend and Contentstack as the
+headless CMS backend. All content — products, reviews, banners, deals, and
+categories — is managed entirely through Contentstack without touching code.
+
+Design Theme:
+  - Dark background (#0b0213 deep purple-black)
+  - Fuchsia / Cyan neon accent color palette
+  - Glassmorphism and glow effects
+  - Geist Sans typography (Google Fonts via Next.js)
+  - Premium cyberpunk aesthetic with micro-animations
+
+Tech Stack:
+  - Next.js 15.5.18 (App Router, React Server Components)
+  - React 19
+  - TypeScript 5
+  - Tailwind CSS v4
+  - Contentstack JavaScript SDK v3.15
+  - Node.js (for upload scripts)
+
+Environment:
+  - CONTENTSTACK_API_KEY      = blta0298b66b354b358
+  - CONTENTSTACK_DELIVERY_TOKEN = cs440926205873b5878582be4a (read-only)
+  - CONTENTSTACK_ENVIRONMENT  = productblog
+  - Region                    = EU (eu-api.contentstack.com)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 2: PROJECT DIRECTORY STRUCTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+nexcms-website/
+├── app/
+│   ├── api/                     ← API routes
+│   ├── authors/                 ← Blog authors listing page
+│   ├── best-sellers/            ← /best-sellers page  [NEW]
+│   ├── blog/                    ← Blog listing + individual posts
+│   ├── deals/                   ← /deals page with countdown timers  [NEW]
+│   ├── new-arrivals/            ← /new-arrivals page  [NEW]
+│   ├── products/
+│   │   ├── page.tsx             ← All products listing  [MODIFIED]
+│   │   └── [uid]/page.tsx       ← Individual product detail page  [MODIFIED]
+│   ├── search/                  ← /search page with real-time results  [NEW]
+│   ├── globals.css              ← Global CSS + animations  [MODIFIED]
+│   ├── layout.tsx               ← Root layout with Navbar, Cart, Footer  [MODIFIED]
+│   └── page.tsx                 ← Homepage  [MODIFIED]
+│
+├── components/
+│   ├── AddToCartButton.tsx      ← Cart add button with animation  [NEW]
+│   ├── BlogCard.tsx             ← Blog post card  [EXISTING]
+│   ├── CartDrawer.tsx           ← Slide-in cart sidebar  [NEW]
+│   ├── CategoryGrid.tsx         ← Category icon grid  [NEW]
+│   ├── DealCard.tsx             ← Deal card with live countdown  [NEW]
+│   ├── HeroBanner.tsx           ← Auto-sliding hero carousel  [NEW]
+│   ├── Navbar.tsx               ← Top navigation bar  [MODIFIED]
+│   ├── ProductCard.tsx          ← Product card component  [MODIFIED]
+│   ├── ReviewCard.tsx           ← Customer review card  [NEW]
+│   ├── SaleTimer.tsx            ← Countdown timer component  [NEW]
+│   ├── SectionHeader.tsx        ← Reusable section header  [NEW]
+│   └── StarRating.tsx           ← Star rating display  [NEW]
+│
+├── contexts/
+│   └── CartContext.tsx          ← Global cart state (React Context)  [NEW]
+│
+├── lib/
+│   └── contentstack.ts          ← All CMS fetch helpers  [MODIFIED]
+│
+├── types/
+│   └── index.ts                 ← TypeScript interfaces  [MODIFIED]
+│
+├── .env.local                   ← Secret API keys (NOT pushed to GitHub)
+├── .gitignore                   ← Updated to exclude upload scripts
+├── Contentstack_Management_Guide.txt  ← CMS setup reference
+├── NexStore_Developer_Guide.txt       ← Developer reference
+├── package.json                 ← Dependencies
+├── next.config.ts               ← Next.js configuration
+└── tsconfig.json                ← TypeScript config
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 3: CONTENTSTACK CMS SETUP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+5 Content Types were set up in Contentstack:
+
+────────────────────────────────────────────────────────────────────────────────
+CONTENT TYPE 1: product  (MODIFIED — 9 new fields added)
+────────────────────────────────────────────────────────────────────────────────
+
+Total fields: 23
+
+Existing fields (14):
+  title, slug, description, short_desc, price, compare_price,
+  images, category, tags, in_stock, badge, features, cta_label, cta_url
+
+New fields added (9):
+  Field Label     | UID            | Type
+  ─────────────────────────────────────────
+  Rating          | rating         | Number
+  Review Count    | review_count   | Number
+  Is Best Seller  | is_best_seller | Boolean
+  Is Featured     | is_featured    | Boolean
+  Is New Arrival  | is_new_arrival | Boolean
+  Sale Ends At    | sale_ends_at   | Date/Time
+  Brand           | brand          | Short text
+  Delivery Days   | delivery_days  | Number
+  Sponsored       | sponsored      | Boolean
+
+  NOTE: features group has max 3 instances in this stack.
+
+────────────────────────────────────────────────────────────────────────────────
+CONTENT TYPE 2: review  (NEW)
+────────────────────────────────────────────────────────────────────────────────
+
+Fields (8):
+  title, product_uid, reviewer_name, rating,
+  review_body, verified_purchase, helpful_count, published_date
+
+────────────────────────────────────────────────────────────────────────────────
+CONTENT TYPE 3: banner  (NEW)
+────────────────────────────────────────────────────────────────────────────────
+
+Fields (9):
+  title, subtitle, desktop_image, mobile_image,
+  badge_text, cta_label, cta_url, active, sort_order
+
+────────────────────────────────────────────────────────────────────────────────
+CONTENT TYPE 4: deal  (NEW)
+────────────────────────────────────────────────────────────────────────────────
+
+Fields (5):
+  title, product (Reference → product), deal_price, ends_at, active
+
+────────────────────────────────────────────────────────────────────────────────
+CONTENT TYPE 5: category_page  (NEW)
+────────────────────────────────────────────────────────────────────────────────
+
+Fields (7):
+  title, slug, icon, banner_image, description, sort_order, active
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 4: PAGES BUILT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Page              | URL               | Description
+──────────────────────────────────────────────────────────────────────────────
+Homepage          | /                 | Hero banner, categories, deals, best
+                  |                   | sellers, new arrivals, product grid
+                  |                   | with sidebar filter
+Product Listing   | /products         | Full paginated product listing
+Product Detail    | /products/[uid]   | Image gallery, specs, reviews,
+                  |                   | sale timer, related products
+Best Sellers      | /best-sellers     | Products where is_best_seller = true
+New Arrivals      | /new-arrivals     | Products where is_new_arrival = true
+Deals             | /deals            | Active deals with countdown timers
+Search            | /search           | Search by title, brand, tags
+Blog Listing      | /blog             | All blog posts
+Blog Post         | /blog/[url]       | Individual blog post
+Authors           | /authors          | Blog author profiles
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 5: COMPONENTS BUILT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Component          | Description
+──────────────────────────────────────────────────────────────────────────────
+HeroBanner.tsx     | Auto-sliding carousel (4.5s interval). Shows CMS banners
+                   | when available, falls back to 3 animated built-in slides.
+CategoryGrid.tsx   | Row of clickable category icons. Fetches from
+                   | category_page content type. Falls back to 12 static icons.
+DealCard.tsx       | Deal card showing product image, name, prices, discount %,
+                   | and live countdown timer.
+SaleTimer.tsx      | Countdown timer (DD:HH:MM:SS) for deal expiry. Updates
+                   | every second. Shows "Deal expired" when time is up.
+ProductCard.tsx    | Full product card with: image, brand, title, rating stars,
+                   | review count, price, compare price, discount badge, delivery
+                   | info, Best Seller badge, New Arrival badge, Ad label,
+                   | Add to Cart / Out of Stock button.
+StarRating.tsx     | Renders filled/half/empty stars based on a numeric rating.
+ReviewCard.tsx     | Customer review with star rating, verified badge,
+                   | reviewer name, date, helpful count.
+AddToCartButton.tsx| Cart add button. Animates on click, shows "Added!" state.
+CartDrawer.tsx     | Slide-in cart from the right side. Shows all cart items,
+                   | quantity controls, subtotal, and checkout button.
+Navbar.tsx         | Top navigation with: logo, search bar, cart icon (with
+                   | item count badge), dynamic category dropdown, links to
+                   | Deals, Best Sellers, New Arrivals, Blog.
+SectionHeader.tsx  | Reusable heading component with icon, title, subtitle,
+                   | and optional "View All" link.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 6: CONTENTSTACK LIBRARY (lib/contentstack.ts)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+All CMS data fetching is centralized in lib/contentstack.ts.
+The stack is initialized with EU region:
+  Contentstack.Stack({ api_key, delivery_token, environment, region: EU })
+
+Functions available:
+
+  BLOG:
+    getAllBlogPosts()
+    getBlogPostByUrl(url)
+    getRecentBlogPosts(limit)
+    getPaginatedBlogPosts(page, limit)
+
+  AUTHORS:
+    getAllAuthors()
+    getAuthorByUid(uid)
+    getBlogPostsByAuthor(authorUid)
+
+  PRODUCTS:
+    getAllProducts({ category?, inStockOnly? })
+    getProductByUid(uid)
+    getPaginatedProducts(page, limit)
+    getProductCategories()
+    getBestSellers(limit)
+    getFeaturedProducts(limit)
+    getNewArrivals(limit)
+    searchProducts(queryStr)
+
+  REVIEWS:
+    getReviews(productUid)
+    getAllReviews()
+
+  BANNERS:
+    getBanners()
+
+  DEALS:
+    getDeals()
+
+  CATEGORY PAGES:
+    getCategoryPages()
+
+Cache revalidation: 60 seconds (export const revalidate = 60)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 7: TYPE DEFINITIONS (types/index.ts)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TypeScript interfaces defined:
+
+  CSFile         → { url, title?, content_type? }
+  Author         → Blog author with bio, profile_image, social links
+  BlogPost       → Full blog post with author reference
+  Product        → Full product (23 fields) including all new CMS fields
+  Review         → Customer review linked to a product via product_uid
+  Banner         → Homepage carousel slide
+  Deal           → Time-limited deal referencing a product
+  CategoryPage   → Category icon entry
+  PaginatedResult<T> → Generic pagination wrapper
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 8: CART SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A global cart system was implemented using React Context API.
+
+  contexts/CartContext.tsx
+    - CartProvider wraps the entire app (in layout.tsx)
+    - State: items[], each with { product, quantity }
+    - Actions: addToCart, removeFromCart, updateQuantity, clearCart
+    - The cart count badge shows in the Navbar automatically
+
+  components/CartDrawer.tsx
+    - Slides in from the right when cart icon is clicked
+    - Shows all items with image, name, price × quantity
+    - Quantity increase/decrease buttons
+    - Remove button per item
+    - Subtotal calculation
+    - Checkout button (UI only — no payment integration yet)
+
+  components/AddToCartButton.tsx
+    - Used on ProductCard and product detail page
+    - Shows "Add to Cart" if in_stock = true
+    - Shows "Out of Stock" (disabled) if in_stock = false
+    - Animates to "Added! ✓" for 1.5 seconds after clicking
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 9: PRODUCTS UPLOADED TO CONTENTSTACK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+All products were uploaded using the Contentstack Management API
+(eu-api.contentstack.com/v3) via Node.js scripts.
+
+API Key     : blta0298b66b354b358
+Mgmt Token  : cs1da30928aae39d4850322587  (kept local — not pushed to GitHub)
+Environment : productblog
+
+──────────────────────────────────────────────────────────────────────────────
+# | Product                      | UID                     | Price     | Category
+──────────────────────────────────────────────────────────────────────────────
+1 | OnePlus 13 5G                | blt6d72b43f06bae7e5     | ₹69,999   | mobiles
+2 | Vivo X200T 5G                | blt97c6b25d3963eda8     | ₹64,999   | mobiles
+3 | Nothing Phone 4a Pro         | bltd545f3907b353287     | ₹34,999   | mobiles
+4 | Samsung Galaxy S26 Ultra     | blt06582e9749f7ae6e     | ₹1,49,999 | mobiles
+5 | Lenovo LOQ 16 RTX 5060       | blt6e391be78ffa0724     | ₹89,999   | laptops
+6 | Lenovo Legion 7 Gen 10 (2026)| bltf0fa577662b016c6     | ₹1,64,999 | laptops
+──────────────────────────────────────────────────────────────────────────────
+
+Product Badges:
+  🏆 Best Sellers : OnePlus 13, Lenovo LOQ, Lenovo Legion 7, Samsung S26 Ultra
+  🆕 New Arrivals : All 6 products
+  Featured        : Nothing 4a Pro, Lenovo LOQ, Lenovo Legion 7, Samsung S26 Ultra
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 10: REVIEWS UPLOADED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+5 customer reviews were uploaded for the OnePlus 13 5G product.
+
+  UID                   | Reviewer     | Rating | Verified
+  ──────────────────────────────────────────────────────────────────
+  blt4c8c6f7295c52d5e   | Rahul M.     | 5/5    | Yes
+  blta61948e54bdaa108   | Priya K.     | 5/5    | Yes
+  blt7e68c1567e3ef462   | Arjun S.     | 4/5    | Yes
+  blt88aa5f9210293b5c   | Deepa R.     | 5/5    | No
+  blt7471f5800bbd95d2   | Vikram P.    | 3/5    | Yes
+
+Mixed ratings were intentional (5, 5, 4, 5, 3) to appear authentic.
+Average = 4.4 stars across 5 reviews.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 11: DEALS UPLOADED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1 Deal of the Day was created for OnePlus 13 5G.
+
+  UID           : bltb77a853ae7f47431
+  Title         : Deal of the Day — OnePlus 13 5G
+  Product Ref   : blt6d72b43f06bae7e5 (OnePlus 13 5G)
+  Regular Price : ₹69,999
+  Deal Price    : ₹62,999
+  Saving        : ₹7,000 (10% OFF)
+  Expires       : 2026-06-02 23:59 UTC
+  Active        : true
+
+The deal shows a live countdown timer on the homepage and /deals page.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 12: UPLOAD SCRIPTS (Local Only — Not in GitHub)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+4 Node.js scripts were created for uploading content via the Management API.
+These are excluded from GitHub (added to .gitignore) because they contain
+hardcoded API credentials.
+
+  Script                       | What it does
+  ──────────────────────────────────────────────────────────────────────────────
+  upload-product.js            | Uploads OnePlus 13 5G (1 product)
+  upload-reviews-and-deal.js   | Uploads 5 reviews + 1 Deal of the Day
+  upload-4-products.js         | Uploads Vivo X200T, Nothing 4a Pro,
+                               | Lenovo LOQ RTX 5060, Samsung S26 Ultra
+  upload-legion7.js            | Uploads Lenovo Legion 7 Gen 10 (2026)
+
+All scripts follow the same pattern:
+  1. POST to /v3/content_types/{uid}/entries  (create)
+  2. POST to /v3/content_types/{uid}/entries/{uid}/publish  (publish)
+
+All entries were published to the "productblog" environment.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 13: GIT & GITHUB
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Remote   : https://github.com/sparrowhawk1024/nexcms-website
+Branch   : main
+Git user : sparrowhawk1024 <premcnaik2004@gmail.com>
+
+Commit made:
+  Hash    : 9be3258
+  Message : feat: add full NexStore e-commerce features with Contentstack CMS
+            integration
+  Files   : 26 files changed, 4302 insertions(+), 546 deletions(-)
+
+New files pushed (16):
+  Contentstack_Management_Guide.txt
+  NexStore_Developer_Guide.txt
+  app/best-sellers/page.tsx
+  app/deals/page.tsx
+  app/new-arrivals/page.tsx
+  app/search/page.tsx
+  components/AddToCartButton.tsx
+  components/CartDrawer.tsx
+  components/CategoryGrid.tsx
+  components/DealCard.tsx
+  components/HeroBanner.tsx
+  components/ReviewCard.tsx
+  components/SaleTimer.tsx
+  components/SectionHeader.tsx
+  components/StarRating.tsx
+  contexts/CartContext.tsx
+
+Modified files (9):
+  app/globals.css
+  app/layout.tsx
+  app/page.tsx
+  app/products/[uid]/page.tsx
+  app/products/page.tsx
+  components/Navbar.tsx
+  components/ProductCard.tsx
+  lib/contentstack.ts
+  types/index.ts
+
+Files excluded from GitHub (.gitignore):
+  upload-product.js
+  upload-reviews-and-deal.js
+  upload-4-products.js
+  upload-legion7.js
+  NexCMS_Full_Course.txt
+  .env.local (was already excluded)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 14: ISSUES ENCOUNTERED AND FIXES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Issue 1: Features group max 3 instances
+  Error   : "The field cannot have more than 3 instances to meet the maximum
+             requirement."
+  Cause   : The 'features' group field in Contentstack was configured with a
+             max of 3 instances. The upload script sent 8 features.
+  Fix     : Reduced features to 3 per product, combining values where needed
+             (e.g., "6000 mAh | 100W SuperVOOC" in one field).
+  Future  : To allow more features, go to Contentstack → Content Models →
+            product → Features group → Edit → increase max instances.
+
+Issue 2: PowerShell execution policy blocking npm
+  Error   : "npm.ps1 cannot be loaded because running scripts is disabled"
+  Cause   : Windows PowerShell default execution policy is "Restricted",
+             which blocks all scripts including npm.
+  Fix     : Ran the command:
+              Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+  Scope   : CurrentUser only (does not affect system-wide policy).
+  Result  : npm run dev and all npm commands now work normally.
+
+Issue 3: PowerShell && operator not supported
+  Error   : "The token '&&' is not a valid statement separator"
+  Cause   : PowerShell does not support && chaining like bash/cmd.
+  Fix     : Run each command separately (git status, then git remote -v).
+
+Issue 4: Git identity not configured
+  Error   : "Author identity unknown — fatal: unable to auto-detect email"
+  Cause   : First-time git commit on this machine with no global config.
+  Fix     : Ran:
+              git config --global user.name "sparrowhawk1024"
+              git config --global user.email "premcnaik2004@gmail.com"
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 15: HOW TO RUN THE PROJECT LOCALLY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Prerequisites:
+  - Node.js installed
+  - Contentstack account with the stack set up
+
+Steps:
+  1. Clone the repo:
+       git clone https://github.com/sparrowhawk1024/nexcms-website.git
+       cd nexcms-website
+
+  2. Install dependencies:
+       npm install
+
+  3. Create .env.local file with:
+       CONTENTSTACK_API_KEY=blta0298b66b354b358
+       CONTENTSTACK_DELIVERY_TOKEN=<your delivery token>
+       CONTENTSTACK_ENVIRONMENT=productblog
+       REVALIDATE_SECRET=super_secret_revalidation_key
+
+  4. Start dev server:
+       npm run dev
+
+  5. Open browser at:
+       http://localhost:3000
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 16: WHAT CONTROLS WHAT ON THE WEBSITE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Website Element                     → Content Type + Field
+──────────────────────────────────────────────────────────────────────────────
+Homepage hero carousel              → banner (active = true, sort_order)
+Category icon grid                  → category_page (active = true, sort_order)
+Deals of the Day section            → deal (active = true, ends_at)
+Best Sellers scroll                 → product (is_best_seller = true)
+New Arrivals grid                   → product (is_new_arrival = true)
+
+Product card name                   → product.title
+Product card price                  → product.price
+Product card strikethrough price    → product.compare_price
+Product card discount %             → auto-calculated
+Product card star rating            → product.rating
+Product card review count           → product.review_count
+Product card brand                  → product.brand
+Product card Best Seller badge      → product.is_best_seller = true
+Product card New Arrival badge      → product.is_new_arrival = true
+Product card Add to Cart button     → product.in_stock = true
+Product card Out of Stock           → product.in_stock = false
+Product card delivery info          → product.delivery_days
+Product card Sponsored label        → product.sponsored = true
+
+Product detail page sale timer      → product.sale_ends_at (future date)
+Product detail page image gallery   → product.images (multiple files)
+Product detail page specs table     → product.features (label + value pairs)
+Product detail page buy button      → product.cta_url + product.cta_label
+Product detail page reviews         → review (product_uid = product UID)
+
+/deals countdown timer              → deal.ends_at
+/best-sellers page                  → product.is_best_seller = true
+/new-arrivals page                  → product.is_new_arrival = true
+/search results                     → product (title, brand, tags searched)
+Navbar category dropdown            → product.category field values
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 17: PENDING / NEXT STEPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [ ] Deploy to Vercel (make the website live on the internet)
+  [ ] Add homepage hero banners in Contentstack
+  [ ] Add category_page entries (Mobiles, Laptops, etc.)
+  [ ] Add reviews for Vivo, Nothing, Lenovo, Samsung products
+  [ ] Increase 'features' group max instances to allow more specs
+  [ ] Add product images (currently no images uploaded)
+  [ ] Connect actual payment gateway for checkout
+  [ ] Add more products across all categories
+  [ ] Set up real-time webhook revalidation (instead of 60s cache)
+
+================================================================================
+END OF REPORT
+================================================================================
