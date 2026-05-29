@@ -1,0 +1,610 @@
+================================================================================
+NEXSTORE: COMPLETE CONTENTSTACK MANAGEMENT GUIDE
+================================================================================
+Generated: 2026-05-25
+This guide tells you EXACTLY what to set up in Contentstack and WHY each
+field exists. Follow this top to bottom and your entire website will be
+manageable from the CMS without touching any code.
+================================================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HOW MANY CONTENT TYPES DO YOU NEED?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+You need 5 content types in total:
+
+  1. product        ← ALREADY EXISTS (just needs 9 new fields added)
+  2. review         ← CREATE NEW (customer reviews for each product)
+  3. banner         ← CREATE NEW (homepage hero carousel slides)
+  4. deal           ← CREATE NEW (Deal of the Day sections)
+  5. category_page  ← CREATE NEW (category grid on homepage)
+
+Everything that appears on your website — products, reviews, deals, banners,
+categories — is managed through these 5 content types.
+
+You also have (already set up from before):
+  - author          ← Blog authors
+  - blog            ← Blog posts
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTENT TYPE 1: product  (MODIFY EXISTING)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+HOW TO OPEN:
+  Contentstack Dashboard → Content Models → product → Edit
+
+WHAT THIS CONTENT TYPE IS FOR:
+  Every single product in your store. One entry = one product.
+  The product content type is the most important one. All cards, product pages,
+  best sellers, new arrivals, and search results are powered by this.
+
+────────────────────────────────────────────────────────────────────────────────
+FIELDS THAT ALREADY EXIST (do not delete or rename these):
+────────────────────────────────────────────────────────────────────────────────
+
+  Field Name      | UID            | Type        | What it does on your site
+  ──────────────────────────────────────────────────────────────────────────────
+  Title           | title          | Short text  | Product name shown on card and page
+  Slug            | slug           | Short text  | URL, e.g. "samsung-galaxy-s25"
+  Description     | description    | Rich text   | Full description on product page
+  Short Desc      | short_desc     | Short text  | One-line summary shown on cards
+  Price           | price          | Number      | Current selling price (₹)
+  Compare Price   | compare_price  | Number      | Original price — shows as strikethrough
+  Images          | images         | File (multi)| Product photos (first = main image)
+  Category        | category       | Short text  | e.g. "mobiles", "laptops"
+  Tags            | tags           | Text (multi)| e.g. ["samsung", "android", "5G"]
+  In Stock        | in_stock       | Boolean     | Controls "Add to Cart" vs "Out of Stock"
+  Badge           | badge          | Short text  | Small label, e.g. "New", "Hot"
+  Features        | features       | Group       | Spec table (label + value pairs)
+  CTA Label       | cta_label      | Short text  | Buy button text, e.g. "Buy on Amazon"
+  CTA URL         | cta_url        | Short text  | External link for Buy button
+
+────────────────────────────────────────────────────────────────────────────────
+9 NEW FIELDS TO ADD (add these in Contentstack now):
+────────────────────────────────────────────────────────────────────────────────
+
+  Go to: Content Models → product → Edit → + Add Field
+
+  ┌─────────────────────┬──────────────────┬───────────┬───────────────────────────────────────┐
+  │ Field Label         │ Field UID        │ Type      │ What it controls on your site         │
+  ├─────────────────────┼──────────────────┼───────────┼───────────────────────────────────────┤
+  │ Rating              │ rating           │ Number    │ Star rating (e.g. 4.3) shown on cards │
+  │ Review Count        │ review_count     │ Number    │ "(1,204)" shown next to stars         │
+  │ Is Best Seller      │ is_best_seller   │ Boolean   │ Shows 🏆 badge + on /best-sellers page │
+  │ Is Featured         │ is_featured      │ Boolean   │ Reserved for featured sections        │
+  │ Is New Arrival      │ is_new_arrival   │ Boolean   │ Shows 🆕 badge + on /new-arrivals page │
+  │ Sale Ends At        │ sale_ends_at     │ Date/Time │ Countdown timer on product page       │
+  │ Brand               │ brand            │ Short text│ Brand name shown above title          │
+  │ Delivery Days       │ delivery_days    │ Number    │ "Delivery in 2 days" info             │
+  │ Sponsored           │ sponsored        │ Boolean   │ Shows small "Ad" label on card        │
+  └─────────────────────┴──────────────────┴───────────┴───────────────────────────────────────┘
+
+IMPORTANT: The Field UID must be EXACTLY as shown above (lowercase, underscores).
+           If you use a different UID the website code will not read the data.
+
+────────────────────────────────────────────────────────────────────────────────
+COMPLETE FIELD LIST — FINAL 'product' CONTENT TYPE (all 23 fields):
+────────────────────────────────────────────────────────────────────────────────
+
+  #  | Field Label      | UID              | Type        | Required?
+  ─────────────────────────────────────────────────────────────────────
+   1 | Title            | title            | Short text  | Yes
+   2 | Slug             | slug             | Short text  | Yes
+   3 | Description      | description      | Rich text   | No
+   4 | Short Desc       | short_desc       | Short text  | No
+   5 | Price            | price            | Number      | Yes
+   6 | Compare Price    | compare_price    | Number      | No
+   7 | Images           | images           | File        | No (multi)
+   8 | Category         | category         | Short text  | Yes
+   9 | Tags             | tags             | Short text  | No (multi)
+  10 | In Stock         | in_stock         | Boolean     | Yes
+  11 | Badge            | badge            | Short text  | No
+  12 | Features         | features         | Group       | No
+  13 | CTA Label        | cta_label        | Short text  | No
+  14 | CTA URL          | cta_url          | Short text  | No
+  ── NEW FIELDS ──────────────────────────────────────────────────────
+  15 | Rating           | rating           | Number      | No
+  16 | Review Count     | review_count     | Number      | No
+  17 | Is Best Seller   | is_best_seller   | Boolean     | No
+  18 | Is Featured      | is_featured      | Boolean     | No
+  19 | Is New Arrival   | is_new_arrival   | Boolean     | No
+  20 | Sale Ends At     | sale_ends_at     | Date/Time   | No
+  21 | Brand            | brand            | Short text  | No
+  22 | Delivery Days    | delivery_days    | Number      | No
+  23 | Sponsored        | sponsored        | Boolean     | No
+
+────────────────────────────────────────────────────────────────────────────────
+HOW TO FILL IN A PRODUCT ENTRY (Example: Samsung Galaxy S25)
+────────────────────────────────────────────────────────────────────────────────
+
+  title           → "Samsung Galaxy S25 Ultra 5G"
+  slug            → "samsung-galaxy-s25-ultra"
+  short_desc      → "200MP camera, Snapdragon 8 Elite, 5000mAh battery"
+  price           → 129999
+  compare_price   → 149999           (shows ₹1,49,999 strikethrough)
+  images          → upload 3-4 photos of the phone
+  category        → "mobiles"        (must match exactly — case-insensitive)
+  tags            → ["samsung","android","5g","flagship"]
+  in_stock        → true
+  badge           → "Bestseller"     (or leave blank — use is_best_seller instead)
+  features        → Group entries:
+                    { label: "Processor",  value: "Snapdragon 8 Elite" }
+                    { label: "RAM",        value: "12GB" }
+                    { label: "Storage",    value: "256GB" }
+                    { label: "Battery",    value: "5000 mAh" }
+                    { label: "Display",    value: "6.8\" QHD+ AMOLED" }
+  cta_label       → "Buy on Flipkart"
+  cta_url         → "https://flipkart.com/..."
+  rating          → 4.5             (based on actual reviews)
+  review_count    → 2847            (update this when reviews grow)
+  is_best_seller  → true            (tick this checkbox)
+  is_new_arrival  → false
+  brand           → "Samsung"
+  delivery_days   → 2
+  sponsored       → false
+
+────────────────────────────────────────────────────────────────────────────────
+CATEGORY VALUES — Use these consistently across all products:
+────────────────────────────────────────────────────────────────────────────────
+
+  Use EXACTLY these strings in the 'category' field (case matters for filtering):
+
+  mobiles      → for smartphones
+  laptops      → for notebooks/MacBooks/Chromebooks
+  headphones   → for over-ear/in-ear headphones and earbuds
+  speakers     → for Bluetooth speakers, soundbars, home audio
+  tablets      → for iPads, Android tablets
+  accessories  → for chargers, cables, covers, mice, keyboards
+  wearables    → for smartwatches, fitness bands
+  tv           → for televisions, monitors
+  cameras      → for DSLRs, mirrorless, action cameras
+  gaming       → for controllers, gaming headsets, consoles
+
+  TIP: Pick your categories now and stick to them. Changing them later
+  means updating all product entries.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTENT TYPE 2: review  (CREATE NEW)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+HOW TO CREATE:
+  Contentstack Dashboard → Content Models → + New Content Type
+  Name: Review
+  UID:  review          ← TYPE THIS EXACTLY
+
+WHAT THIS CONTENT TYPE IS FOR:
+  Customer reviews shown on each product's detail page.
+  One entry = one review written by one customer about one product.
+  They appear in the "Customer Reviews" section with star ratings, verified
+  badges, and helpful vote counts.
+
+────────────────────────────────────────────────────────────────────────────────
+FIELDS TO ADD:
+────────────────────────────────────────────────────────────────────────────────
+
+  #  | Field Label        | UID               | Type      | Required? | Notes
+  ──────────────────────────────────────────────────────────────────────────────
+   1 | Title              | title             | Short text| Yes       | Review headline
+   2 | Product UID        | product_uid       | Short text| Yes       | Links review to product
+   3 | Reviewer Name      | reviewer_name     | Short text| Yes       | Customer's name
+   4 | Rating             | rating            | Number    | Yes       | 1 to 5
+   5 | Review Body        | review_body       | Rich text | No        | Full review text
+   6 | Verified Purchase  | verified_purchase | Boolean   | No        | Green badge if true
+   7 | Helpful Count      | helpful_count     | Number    | No        | "Helpful (12)" button
+   8 | Published Date     | published_date    | Date      | No        | Date shown on card
+
+────────────────────────────────────────────────────────────────────────────────
+HOW TO FIND THE PRODUCT UID (for the product_uid field):
+────────────────────────────────────────────────────────────────────────────────
+
+  Method 1: Open the product entry in Contentstack.
+            Look at the browser URL bar. It will look like:
+            https://app.contentstack.com/.../content-type/product/entry/blt7a3b9c2d1e4f5g6h/edit
+            The long code "blt7a3b9c2d1e4f5g6h" is the UID. Copy and paste it.
+
+  Method 2: In the product entry, look for the "Entry UID" in the right sidebar.
+            It starts with "blt" followed by random letters and numbers.
+
+────────────────────────────────────────────────────────────────────────────────
+HOW TO FILL IN A REVIEW ENTRY (Example):
+────────────────────────────────────────────────────────────────────────────────
+
+  title            → "Best phone I've ever owned!"
+  product_uid      → "blt7a3b9c2d1e4f5g6h"   (paste from the product entry)
+  reviewer_name    → "Rahul M."
+  rating           → 5
+  review_body      → "The camera is absolutely incredible. Battery lasts 2 days
+                      easily. Build quality feels premium. The display is gorgeous.
+                      Worth every rupee!"
+  verified_purchase→ true
+  helpful_count    → 47
+  published_date   → 2025-03-15
+
+────────────────────────────────────────────────────────────────────────────────
+TIPS FOR MANAGING REVIEWS:
+────────────────────────────────────────────────────────────────────────────────
+
+  - Add at least 3-5 reviews per product for it to look credible.
+  - Mix ratings (don't make them all 5 stars — add some 3-4 star ones too).
+  - Set verified_purchase = true for reviews that look real/genuine.
+  - Keep reviewer names realistic: "Priya K.", "Arjun S.", "Deepa R."
+  - After adding reviews, update the 'rating' and 'review_count' fields
+    on the product entry to match your new reviews.
+
+  RATING CALCULATION EXAMPLE:
+  If you add 5 reviews with ratings: 5, 4, 5, 3, 5
+  Average = (5+4+5+3+5) / 5 = 4.4
+  → Set product.rating = 4.4
+  → Set product.review_count = 5
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTENT TYPE 3: banner  (CREATE NEW)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+HOW TO CREATE:
+  Contentstack Dashboard → Content Models → + New Content Type
+  Name: Banner
+  UID:  banner          ← TYPE THIS EXACTLY
+
+WHAT THIS CONTENT TYPE IS FOR:
+  The large auto-sliding hero carousel at the very top of your homepage.
+  One entry = one slide in the carousel. You can have as many slides as you want.
+  Slides rotate every 4.5 seconds automatically.
+
+  As long as this content type has NO entries (or no active entries),
+  the website shows the 3 built-in animated fallback banners.
+
+────────────────────────────────────────────────────────────────────────────────
+FIELDS TO ADD:
+────────────────────────────────────────────────────────────────────────────────
+
+  #  | Field Label     | UID            | Type      | Required? | Notes
+  ──────────────────────────────────────────────────────────────────────────────
+   1 | Title           | title          | Short text| Yes       | Main heading on banner
+   2 | Subtitle        | subtitle       | Short text| No        | Smaller text below heading
+   3 | Desktop Image   | desktop_image  | File      | No        | Banner image (1920×500 px)
+   4 | Mobile Image    | mobile_image   | File      | No        | Portrait version (optional)
+   5 | Badge Text      | badge_text     | Short text| No        | Small label, e.g. "Up to 60% Off"
+   6 | CTA Label       | cta_label      | Short text| No        | Button text, e.g. "Shop Now"
+   7 | CTA URL         | cta_url        | Short text| No        | Button link, e.g. "/deals"
+   8 | Active          | active         | Boolean   | Yes       | Must be true to show on site
+   9 | Sort Order      | sort_order     | Number    | No        | Lower = shows first (1, 2, 3...)
+
+────────────────────────────────────────────────────────────────────────────────
+HOW TO FILL IN A BANNER ENTRY (Example: Sale Banner):
+────────────────────────────────────────────────────────────────────────────────
+
+  title          → "Monsoon Mega Sale"
+  subtitle       → "Up to 70% off on mobiles, laptops, and accessories"
+  desktop_image  → upload a wide banner image (1920×500 pixels works best)
+  badge_text     → "⚡ Limited Time Offer"
+  cta_label      → "Shop Now"
+  cta_url        → "/deals"
+  active         → true
+  sort_order     → 1
+
+────────────────────────────────────────────────────────────────────────────────
+HOW TO FILL IN A BANNER ENTRY (Example: New Arrivals Banner):
+────────────────────────────────────────────────────────────────────────────────
+
+  title          → "New Arrivals Just Dropped"
+  subtitle       → "iPhone 16, Galaxy S25, MacBook Air M4 — now in stock"
+  desktop_image  → upload a different banner image
+  badge_text     → "🆕 Just Launched"
+  cta_label      → "Explore New Products"
+  cta_url        → "/new-arrivals"
+  active         → true
+  sort_order     → 2
+
+────────────────────────────────────────────────────────────────────────────────
+TIPS FOR MANAGING BANNERS:
+────────────────────────────────────────────────────────────────────────────────
+
+  - Keep 2-4 banners. More than 5 feels overwhelming.
+  - Use sort_order to control which slide shows first (1 = first, 2 = second).
+  - To temporarily hide a banner without deleting it: set active = false.
+  - Image size recommendation: 1920 × 500 pixels, JPEG or WebP format.
+  - Keep file size under 300KB for fast loading. Use tinypng.com to compress.
+  - The CTA URL can be any page on your site:
+      /deals          → deals page
+      /best-sellers   → best sellers page
+      /new-arrivals   → new arrivals page
+      /products       → all products
+      /?category=mobiles → specific category
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTENT TYPE 4: deal  (CREATE NEW)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+HOW TO CREATE:
+  Contentstack Dashboard → Content Models → + New Content Type
+  Name: Deal
+  UID:  deal            ← TYPE THIS EXACTLY
+
+WHAT THIS CONTENT TYPE IS FOR:
+  The "Deals of the Day" section on the homepage and the /deals page.
+  One entry = one deal (one product at a special price for a limited time).
+  Each deal card shows a live countdown timer and a "Grab Deal →" button.
+
+  IMPORTANT: A deal is NOT a product. A deal REFERENCES a product.
+  The deal entry says "I am offering Product X at a special price until Date Y".
+
+────────────────────────────────────────────────────────────────────────────────
+FIELDS TO ADD:
+────────────────────────────────────────────────────────────────────────────────
+
+  #  | Field Label  | UID        | Type               | Required? | Notes
+  ──────────────────────────────────────────────────────────────────────────────
+   1 | Title        | title      | Short text         | Yes       | Deal name shown on strip
+   2 | Product      | product    | Reference (product)| Yes       | Which product is on deal
+   3 | Deal Price   | deal_price | Number             | Yes       | The discounted price
+   4 | Ends At      | ends_at    | Date/Time          | No        | Countdown timer end time
+   5 | Active       | active     | Boolean            | Yes       | Must be true to show deal
+
+HOW TO ADD THE REFERENCE FIELD:
+  When adding the 'product' field, select type = "Reference".
+  In the reference settings, choose "Single" and select the 'product' content type.
+  This creates a dropdown in the deal entry where you can search and pick a product.
+
+────────────────────────────────────────────────────────────────────────────────
+HOW TO FILL IN A DEAL ENTRY (Example):
+────────────────────────────────────────────────────────────────────────────────
+
+  title       → "Deal of the Day"
+  product     → [search and select] "Samsung Galaxy S25 Ultra 5G"
+  deal_price  → 109999          (cheaper than the product's price of 129999)
+  ends_at     → 2025-06-01 23:59  (the deal expires at midnight June 1st)
+  active      → true
+
+  NOTE: The discount % is calculated automatically:
+        ((129999 - 109999) / 129999) × 100 = 15.4% → shows as "15% OFF"
+
+────────────────────────────────────────────────────────────────────────────────
+TIPS FOR MANAGING DEALS:
+────────────────────────────────────────────────────────────────────────────────
+
+  - Run 2-4 deals at a time. Too many loses urgency.
+  - Always set ends_at to create scarcity (countdown timer motivates action).
+  - When a deal expires, set active = false. The timer will show "Deal expired"
+    until you do this.
+  - The deal_price MUST be less than the product's regular price to show
+    a meaningful discount badge.
+  - You can run the same product as a deal multiple times — just create new
+    deal entries with new dates.
+  - Schedule deals by creating entries in advance with future ends_at dates
+    and setting active = true only when you want them to go live.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTENT TYPE 5: category_page  (CREATE NEW)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+HOW TO CREATE:
+  Contentstack Dashboard → Content Models → + New Content Type
+  Name: Category Page
+  UID:  category_page   ← TYPE THIS EXACTLY
+
+WHAT THIS CONTENT TYPE IS FOR:
+  The row of category icons near the top of your homepage ("Shop by Category").
+  One entry = one category button (icon + label).
+  Clicking a category icon filters all products to show only that category.
+
+  IMPORTANT: The 'slug' field here must match the 'category' field value
+  you use in your product entries. E.g., if you set product.category = "mobiles",
+  then the category_page entry must have slug = "mobiles".
+
+  As long as no entries exist, the website shows 12 built-in fallback categories.
+
+────────────────────────────────────────────────────────────────────────────────
+FIELDS TO ADD:
+────────────────────────────────────────────────────────────────────────────────
+
+  #  | Field Label    | UID           | Type      | Required? | Notes
+  ──────────────────────────────────────────────────────────────────────────────
+   1 | Title          | title         | Short text| Yes       | Category name, e.g. "Mobiles"
+   2 | Slug           | slug          | Short text| Yes       | Must match product.category
+   3 | Icon           | icon          | Short text| No        | An emoji, e.g. 📱
+   4 | Banner Image   | banner_image  | File      | No        | Category hero image
+   5 | Description    | description   | Short text| No        | Short description
+   6 | Sort Order     | sort_order    | Number    | No        | Display order (1, 2, 3...)
+   7 | Active         | active        | Boolean   | Yes       | Must be true to show
+
+────────────────────────────────────────────────────────────────────────────────
+ALL CATEGORY ENTRIES TO CREATE (one entry per row):
+────────────────────────────────────────────────────────────────────────────────
+
+  Title        | Slug        | Icon | Sort | Active
+  ──────────────────────────────────────────────────────
+  All          |             | 🛍️  | 0    | true    ← Shows all products
+  Mobiles      | mobiles     | 📱  | 1    | true
+  Laptops      | laptops     | 💻  | 2    | true
+  Headphones   | headphones  | 🎧  | 3    | true
+  Speakers     | speakers    | 🔊  | 4    | true
+  Tablets      | tablets     | 📲  | 5    | true
+  Accessories  | accessories | ⌨️  | 6    | true
+  Wearables    | wearables   | ⌚  | 7    | true
+  TVs          | tv          | 📺  | 8    | true
+  Cameras      | cameras     | 📷  | 9    | true
+  Gaming       | gaming      | 🎮  | 10   | true
+
+  NOTE: The "All" entry has an empty slug. Clicking it goes to the homepage
+  and shows all products. Leave the slug field blank for this one.
+
+────────────────────────────────────────────────────────────────────────────────
+TIPS FOR MANAGING CATEGORIES:
+────────────────────────────────────────────────────────────────────────────────
+
+  - To add a new category: Create a new entry here AND make sure you start
+    adding products with that category value.
+  - To remove a category: Set active = false. Does not affect products.
+  - To reorder: Change the sort_order numbers.
+  - Icons are just emoji characters. Copy-paste any emoji as the icon value.
+  - The slug must EXACTLY match what you type in product.category field.
+    "Mobiles" (capital M) and "mobiles" (lowercase m) are NOT the same.
+    Use lowercase everywhere to be safe.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FULL OVERVIEW: WHAT CONTROLS WHAT ON YOUR WEBSITE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  WEBSITE ELEMENT                      → MANAGED BY (Content Type + Field)
+  ──────────────────────────────────────────────────────────────────────────────
+
+  Homepage hero carousel slides        → banner (title, desktop_image, active)
+  Category icon grid                   → category_page (title, icon, slug, active)
+  "Deals of the Day" section           → deal (product ref, deal_price, ends_at, active)
+  "Best Sellers" horizontal scroll     → product (is_best_seller = true)
+  "New Arrivals" grid                  → product (is_new_arrival = true)
+
+  Product card — name                  → product (title)
+  Product card — price                 → product (price)
+  Product card — strikethrough price   → product (compare_price)
+  Product card — discount %            → auto-calculated from price & compare_price
+  Product card — star rating           → product (rating)
+  Product card — review count          → product (review_count)
+  Product card — brand name            → product (brand)
+  Product card — "🏆 Best Seller" badge→ product (is_best_seller = true)
+  Product card — "🆕 New" badge        → product (is_new_arrival = true)
+  Product card — "Add to Cart" button  → product (in_stock = true)
+  Product card — "Out of Stock" message→ product (in_stock = false)
+  Product card — delivery info         → product (delivery_days)
+  Product card — "Sponsored" label     → product (sponsored = true)
+  Product card — custom badge text     → product (badge field)
+
+  Product detail page — sale timer     → product (sale_ends_at with future date)
+  Product detail page — image gallery  → product (images — upload multiple)
+  Product detail page — specs table    → product (features group: label + value)
+  Product detail page — tags           → product (tags field, multi-value)
+  Product detail page — "Buy Now" link → product (cta_url + cta_label)
+  Product detail page — reviews list   → review (product_uid matching product)
+  Product detail page — avg rating     → auto-calculated from review entries
+  Product detail page — related items  → auto (same category products)
+
+  /deals page — deal cards             → deal (active = true)
+  /deals page — countdown timers       → deal (ends_at field)
+  /best-sellers page                   → product (is_best_seller = true)
+  /new-arrivals page                   → product (is_new_arrival = true)
+  /search page — results               → product (title, brand, tags searched)
+
+  Navbar — category dropdown list      → product (category field values)
+  Footer                               → hardcoded in app/layout.tsx
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DAILY MANAGEMENT CHECKLIST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Use this as a reference for routine website management tasks:
+
+  TASK                                      | WHERE TO DO IT IN CONTENTSTACK
+  ──────────────────────────────────────────────────────────────────────────────
+  Add a new product                         | Content → product → + New Entry
+  Update product price                      | Content → product → edit entry → price
+  Mark product as out of stock              | Content → product → in_stock = false
+  Add product to best sellers               | Content → product → is_best_seller = true
+  Feature a new arrival                     | Content → product → is_new_arrival = true
+  Run a time-limited sale                   | Content → product → sale_ends_at = future date
+  Add a customer review                     | Content → review → + New Entry
+  Update review count on a product          | Content → product → review_count = new number
+  Update star rating on a product           | Content → product → rating = new average
+  Start a Deal of the Day                   | Content → deal → + New Entry → active = true
+  End a Deal of the Day                     | Content → deal → edit entry → active = false
+  Change the homepage hero banner           | Content → banner → edit entry or add new one
+  Hide a banner temporarily                 | Content → banner → active = false
+  Add a new product category                | Content → category_page → + New Entry
+  Hide a category                           | Content → category_page → active = false
+  Reorder categories                        | Content → category_page → change sort_order
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP-BY-STEP SETUP ORDER (do this in order — don't skip steps)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  STEP 1: Open 'product' content type and add the 9 new fields listed above.
+  STEP 2: Open each existing product entry and fill in the new fields:
+            - rating (e.g. 4.2)
+            - review_count (e.g. 150)
+            - brand (e.g. "Samsung")
+            - delivery_days (e.g. 2)
+            - is_best_seller → tick for your top 5-10 products
+            - is_new_arrival → tick for your newest products
+          Save and publish each entry.
+  STEP 3: Create the 'category_page' content type with the 7 fields.
+          Create entries for each category (Mobiles, Laptops, etc.).
+          Publish all entries.
+  STEP 4: Create the 'banner' content type with the 9 fields.
+          Create 2-3 banner entries with images. Set active = true.
+          Publish all entries.
+  STEP 5: Create the 'deal' content type with the 5 fields.
+          Create 1-4 deal entries referencing your products.
+          Set ends_at to a future date. Set active = true.
+          Publish all entries.
+  STEP 6: Create the 'review' content type with the 8 fields.
+          Create 3-5 reviews for each product you want reviews on.
+          Make sure product_uid matches exactly.
+          Publish all entries.
+  STEP 7: Open your website at http://localhost:3000 (or your live URL).
+          Check each section appears correctly.
+
+  PUBLISHING REMINDER: In Contentstack, entries must be PUBLISHED (not just saved)
+  to appear on the website. Look for the green "Publish" button in each entry.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TROUBLESHOOTING — IF SOMETHING DOESN'T APPEAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  PROBLEM: I added a banner but the homepage still shows the animated fallback.
+  FIX:     Make sure the banner entry is PUBLISHED (not just saved).
+           Make sure the 'active' field is set to true.
+           Wait 60 seconds and refresh (data is cached for 60 seconds).
+
+  PROBLEM: I set is_best_seller = true but the product doesn't appear.
+  FIX:     Make sure you PUBLISHED the product entry after editing.
+           The 'is_best_seller' field must exist in the content type first.
+           Check the field UID is exactly "is_best_seller" (with underscore).
+
+  PROBLEM: Reviews are not showing on the product page.
+  FIX:     Check that the product_uid in the review entry EXACTLY matches
+           the entry UID of the product (starts with "blt...").
+           Make sure the review entry is PUBLISHED.
+           Make sure the 'review' content type UID is exactly "review".
+
+  PROBLEM: The deal countdown shows "Deal expired" but the date is in the future.
+  FIX:     Check that the ends_at field is a Date/Time type (not just Date).
+           Make sure you set a time along with the date (not just midnight).
+           The time zone matters — Contentstack uses UTC by default.
+
+  PROBLEM: Category filter not working (clicking "Mobiles" shows all products).
+  FIX:     The 'category' field on your product entries must EXACTLY match
+           the 'slug' field on your category_page entries.
+           Example: product.category = "mobiles" and category_page.slug = "mobiles"
+           Both must be the same — including case (use all lowercase).
+
+  PROBLEM: The site takes a long time to show updated content.
+  FIX:     The website caches data for 60 seconds. Wait 60 seconds and refresh.
+           To make it faster, change "export const revalidate = 60" to
+           "export const revalidate = 10" in the page files.
+
+
+================================================================================
+SUMMARY TABLE — ALL 5 CONTENT TYPES AT A GLANCE
+================================================================================
+
+  Content Type  | UID            | # of Fields | Entries Needed | Controls
+  ──────────────────────────────────────────────────────────────────────────────
+  Product       | product        | 23 fields   | 1 per product  | Everything product-related
+  Review        | review         | 8 fields    | 3-10 per product| Review section on product page
+  Banner        | banner         | 9 fields    | 2-4 total      | Homepage hero carousel
+  Deal          | deal           | 5 fields    | 1-6 active     | Deals section + /deals page
+  Category Page | category_page  | 7 fields    | 1 per category | Category icon grid
+
+================================================================================
+END OF GUIDE
+================================================================================

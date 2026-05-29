@@ -31,3 +31,7 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# Contentstack upload scripts (contain API keys — keep local only)
+upload-*.js
+NexCMS_Full_Course.txt

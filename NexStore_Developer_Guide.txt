@@ -1,0 +1,999 @@
+================================================================================
+NEXSTORE: FULL FEATURE UPGRADE — COMPLETE CHANGE LOG & DEVELOPER GUIDE
+================================================================================
+Generated: 2026-05-25
+Project:   NexStore (Next.js 15 + Contentstack + Tailwind)
+Location:  c:\Users\premc\Desktop\projects\nexstore\nexcms-website
+================================================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 1: WHAT WAS ADDED (NEW FILES)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+14 brand new files were created. Here is every file with a plain-English
+explanation of what it does and WHY it exists.
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 1:  contexts/CartContext.tsx
+PURPOSE: Shopping cart state management
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT IT DOES:
+  This file creates a "global shopping cart" that any component on the website
+  can access. It works like a mini-database that lives in the user's browser
+  memory while they shop.
+
+  It stores:
+  - A list of cart items (product + quantity)
+  - The total number of items in the cart
+  - The total price of all items
+  - Whether the cart drawer (side panel) is open or closed
+
+  It provides these actions:
+  - addToCart(product)      → adds a product; if it's already in the cart,
+                               increases its quantity by 1
+  - removeFromCart(uid)     → completely removes a product from the cart
+  - updateQuantity(uid, n)  → changes the quantity; if n=0, removes the item
+  - clearCart()             → empties the entire cart
+  - setIsOpen(true/false)   → opens or closes the cart side panel
+
+HOW IT WORKS (CartProvider):
+  The CartProvider component wraps the entire website (see app/layout.tsx).
+  Any component inside it can call useCart() to get all the cart functions.
+
+HOW IT WORKS (useCart hook):
+  Any component that needs cart data imports useCart() like this:
+    const { addToCart, totalItems } = useCart();
+
+TO CHANGE:
+  - Change currency: NOT here. Change in components/CartDrawer.tsx (the CURRENCY
+    object at the top of that file) and components/ProductCard.tsx.
+  - Add "Save for Later": Add a new state array called savedItems, a
+    saveForLater(uid) function, and a removeSaved(uid) function inside this file.
+  - Persist cart between page reloads: Add localStorage sync inside a useEffect
+    that runs when 'items' changes:
+    useEffect(() => {
+      localStorage.setItem('nexstore-cart', JSON.stringify(items));
+    }, [items]);
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 2:  components/AddToCartButton.tsx
+PURPOSE: The "Add to Cart" button on every product card
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT IT DOES:
+  A reusable button that calls addToCart(product) from CartContext when clicked.
+  It also automatically opens the cart drawer so the user can see what they added.
+
+  It has two states:
+  - In Stock:     Shows a glowing "🛒 Add to Cart" button
+  - Out of Stock: Shows a red "Out of Stock" message (no button)
+
+  It accepts these props:
+  - product     → the product object (required)
+  - fullWidth   → true/false, whether the button stretches full width (default: true)
+  - label       → text on the button (default: "Add to Cart")
+
+TO CHANGE:
+  - Change button text: Pass label="Buy Now" when using the component, or
+    change the default label = "Add to Cart" inside this file (line ~12).
+  - Change button color: Find the className on the <button> element and change
+    the Tailwind color classes (from-fuchsia-600 to-purple-600).
+  - Add a loading spinner: Add a useState(false) for 'loading', set it true
+    when clicked, call addToCart(), then set it false after.
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 3:  components/StarRating.tsx
+PURPOSE: Displays accurate star ratings (★★★★½)
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT IT DOES:
+  Takes a number rating (e.g., 4.3) and renders the correct star icons:
+  - Full stars for the integer part
+  - A half star if the decimal is ≥ 0.3
+  - Empty (dim) stars for the rest
+  - Optionally shows the numeric rating (e.g., "4.3") and review count ("(1,204)")
+
+  Size options: "xs" (tiny), "sm" (small), "md" (medium), "lg" (large)
+
+  Props:
+  - rating       → number from 0 to 5 (required)
+  - reviewCount  → number of reviews to display in parentheses
+  - size         → "xs" | "sm" | "md" | "lg"
+  - showCount    → show/hide the review count (default: true)
+  - showNumeric  → show/hide the number like "4.3" (default: false)
+
+TO CHANGE:
+  - Change star color: In app/globals.css, find .star-filled and change
+    the color property (currently #fbbf24 = amber/gold).
+  - Change star symbol: Replace the ★ character in the JSX with any
+    Unicode character or an SVG icon.
+  - Change half-star threshold: Change the number 0.3 in this line:
+    const hasHalf = clampedRating % 1 >= 0.3;
+    (0.5 means only show half star if decimal is exactly 0.5 or more)
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 4:  components/ReviewCard.tsx
+PURPOSE: Displays a single customer review
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT IT DOES:
+  Renders a beautiful card for one review entry from Contentstack. Shows:
+  - Reviewer's first initial as a colored avatar circle
+  - Reviewer name
+  - "✓ Verified Purchase" green badge (if verified_purchase = true in CS)
+  - Star rating for that specific review
+  - Date of the review (formatted as "25 May 2025")
+  - Review title (bold)
+  - Full review body text (can contain HTML from Contentstack Rich Text)
+  - "👍 Helpful (12)" button showing how many people found it helpful
+
+TO CHANGE:
+  - Show/hide verified badge: The badge appears automatically if the
+    'verified_purchase' field is true in Contentstack. No code change needed.
+  - Change avatar colors: Find the gradient classes on the avatar div:
+    "from-fuchsia-500 to-cyan-500" — change these Tailwind colors.
+  - Show the reviewer's profile photo: Add a profile_image field to the
+    'review' content type in Contentstack, add it to the Review interface
+    in types/index.ts, then replace the letter avatar div with an <Image>.
+  - Limit review body length: Add line-clamp-4 to the dangerouslySetInnerHTML
+    div (it already has this class — remove it to show the full review).
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 5:  components/SectionHeader.tsx
+PURPOSE: Reusable heading for each section on the homepage
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT IT DOES:
+  A consistent header for every section (Deals, Best Sellers, etc.) with:
+  - A colored accent bar on the left
+  - A gradient title
+  - An optional subtitle underneath
+  - An optional "View All →" link on the right
+  - An optional emoji icon before the title
+
+  Props:
+  - title        → the section name (required)
+  - subtitle     → smaller text below the title
+  - viewAllHref  → URL for the "View All" link
+  - viewAllLabel → label text (default: "View All")
+  - accent       → "cyan" | "fuchsia" | "amber" (changes all colors together)
+  - icon         → emoji to show before the title
+
+TO CHANGE:
+  - Section colors: Change the accent prop when using the component.
+    Example: <SectionHeader title="Deals" accent="amber" />
+  - Remove the "View All" link: Simply don't pass the viewAllHref prop.
+  - Change font size: Find the h2 element and change the text-2xl class.
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 6:  components/SaleTimer.tsx
+PURPOSE: Live countdown clock (🕐 Ends in 02:45:30)
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT IT DOES:
+  A client-side countdown timer that ticks every second. It reads an end date/time
+  from Contentstack (e.g., the 'sale_ends_at' field on a product, or 'ends_at'
+  on a deal) and counts down in real time.
+
+  It has two display modes:
+  - compact=false (default): Shows boxes for Days / Hrs / Min / Sec
+  - compact=true:            Shows a small inline "Ends 02:45:30" badge
+
+  When the timer hits zero, it shows "Deal expired" instead of negative numbers.
+
+  Important technical note: It uses a 'mounted' state to prevent SSR hydration
+  errors. The timer only starts after the page loads in the browser.
+
+TO CHANGE:
+  - Change update speed: Change the 1_000 (1 second) in setInterval to
+    500 for half-second updates (smoother but uses more CPU).
+  - Hide days: Remove the line that adds { val: time.d, label: "Days" }
+    to the units array.
+  - Change "Ends in" label: Find the text "Ends in" in the JSX and change it.
+  - Change colors: Find text-cyan-400 and border-cyan-400/30 in the JSX
+    and change them to any Tailwind color.
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 7:  components/CategoryGrid.tsx
+PURPOSE: The icon-based category grid on the homepage
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT IT DOES:
+  Renders a row of category buttons with an emoji icon and label. Clicking one
+  filters the homepage products to that category.
+
+  Data source: It first tries to read from the Contentstack 'category_page'
+  content type. If that content type doesn't exist yet or has no entries,
+  it falls back to a hardcoded list of 12 categories (Mobiles, Laptops, etc.).
+
+  The fallback list is defined at the top of the file in the FALLBACK array.
+  Each item has: uid, title, icon (emoji), slug (used in the URL).
+
+TO CHANGE:
+  - Add a new category to the fallback: Find the FALLBACK array and add an object:
+    { uid: "f-gaming", title: "Gaming", icon: "🎮", slug: "gaming" }
+  - Change fallback icons: Edit the 'icon' field in the FALLBACK array.
+  - Change grid columns: Find "grid-cols-4 sm:grid-cols-6 md:grid-cols-8 
+    lg:grid-cols-12" and change the numbers.
+  - Make it powered by Contentstack: Create a 'category_page' content type with
+    fields: title, slug, icon, active, sort_order. See walkthrough.md for details.
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 8:  components/DealCard.tsx
+PURPOSE: Deal card with hot-deal strip, pricing, and countdown
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT IT DOES:
+  Renders a single deal from Contentstack's 'deal' content type. Shows:
+  - A red "🔥 Deal of the Day — 40% OFF" strip at the top
+  - The product image
+  - Product title (links to product page)
+  - Star rating (if the product has a rating in Contentstack)
+  - Deal price vs original price with savings amount
+  - A live countdown timer (from deal.ends_at field)
+  - A "Grab Deal →" button that links to the product page
+
+  Discount % is calculated automatically: ((original - deal_price) / original) × 100
+
+TO CHANGE:
+  - Change the strip color: Find "from-red-600 to-orange-500" and change to
+    any gradient, e.g., "from-fuchsia-600 to-purple-500".
+  - Change button label: Find "Grab Deal →" in the JSX and change the text.
+  - Show "Add to Cart" instead of "View Product": Replace the <Link> button
+    with <AddToCartButton product={product} /> (import it first).
+  - Change currency: Change the CURRENCY object at the top of this file.
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 9:  components/HeroBanner.tsx
+PURPOSE: The large auto-sliding hero banner at the top of the homepage
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT IT DOES:
+  A full-width hero carousel that slides automatically every 4.5 seconds.
+  Clicking the dots at the bottom right navigates to a specific slide.
+
+  Data source: Reads from Contentstack's 'banner' content type.
+  If no banners exist in Contentstack, it shows 3 beautiful animated fallback
+  banners (Neon Summer Sale, New Arrivals Dropped, #1 Best Sellers).
+
+  The fallback banners are defined in the FALLBACK array at the top of the file.
+  Each fallback banner has: uid, title, subtitle, badge, cta label, href, colors.
+
+  CMS banners (from Contentstack) show the actual desktop_image you upload.
+
+TO CHANGE:
+  - Change slide interval: Find "4_500" in the useEffect and change it.
+    E.g., 3000 = 3 seconds, 6000 = 6 seconds.
+  - Change fallback banner content: Edit the FALLBACK array at the top.
+  - Change fallback banner colors: Edit 'from', 'via', 'accent' in each FALLBACK item.
+  - Change banner height: Find "h-[260px] sm:h-[360px] md:h-[440px]" and change.
+  - Power with Contentstack: Create a 'banner' content type with fields:
+    title, subtitle, desktop_image (File), cta_label, cta_url, badge_text,
+    active (Boolean), sort_order (Number).
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 10: components/CartDrawer.tsx
+PURPOSE: The slide-out cart side panel
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT IT DOES:
+  A panel that slides in from the right side of the screen when a product is
+  added to the cart (or when the cart icon in the navbar is clicked).
+
+  It shows:
+  - Cart header with item count badge
+  - Empty state (if no items) with a "Browse Products" button
+  - Each cart item: image, title, line total, quantity controls (−/+), Remove
+  - Footer: subtotal, "Proceed to Checkout" button, "Continue Shopping" button
+
+  The "Proceed to Checkout" button currently does nothing (no backend).
+  To connect it to a real checkout, see the TO CHANGE section below.
+
+  Clicking the dark backdrop (outside the panel) closes the drawer.
+
+TO CHANGE:
+  - Connect to a real checkout (Razorpay/Stripe): Replace the checkout <button>
+    with an <a href="..."> or add an onClick that calls your payment API.
+  - Change drawer width: Find "max-w-[420px]" and change the number.
+  - Change background color: Find "bg-[#0d0520]" and change the hex value.
+  - Show/hide the "Continue Shopping" button: Remove the last <button> in
+    the footer section.
+  - Add a coupon code field: Add an <input> above the "Proceed to Checkout"
+    button with apply coupon logic.
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 11: app/deals/page.tsx
+PURPOSE: The /deals page — lists all active deals
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT IT DOES:
+  Fetches all 'deal' entries from Contentstack where active = true, then renders
+  them in a responsive grid of DealCards.
+
+  If no deals exist yet, shows a friendly empty state with instructions on how
+  to add deals in Contentstack.
+
+TO CHANGE:
+  - Change page title/description: Edit the metadata object at the top.
+  - Change hero background color: Find "from-[#1a0010]" and change the hex value.
+  - Add category filter tabs: Fetch categories and add category pills like
+    the /products page has.
+  - Limit number of deals shown: Change the .slice(0, N) after the deals array.
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 12: app/best-sellers/page.tsx
+PURPOSE: The /best-sellers page
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT IT DOES:
+  Calls getBestSellers(50) which fetches products from Contentstack where
+  is_best_seller = true. Shows them in a grid with rank number overlays
+  (#1 in gold, #2 in silver, #3 in bronze).
+
+  Empty state shows the exact Contentstack instruction: set is_best_seller = true
+  on any product entry.
+
+TO CHANGE:
+  - Change number of products shown: Change getBestSellers(50) to getBestSellers(20).
+  - Change rank badge colors: Find the className logic in the .map() that checks
+    i === 0, i === 1, i === 2 and edit the Tailwind color classes.
+  - Add sorting: Contentstack currently returns products in title order.
+    To sort by rating, add .sort((a,b) => (b.rating ?? 0) - (a.rating ?? 0))
+    after getBestSellers().
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 13: app/new-arrivals/page.tsx
+PURPOSE: The /new-arrivals page
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT IT DOES:
+  Calls getNewArrivals(50) which fetches products where is_new_arrival = true.
+  Shows them in a 5-column grid with green hero section.
+
+TO CHANGE:
+  - Change number of columns: Find "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 
+    lg:grid-cols-5" and edit the numbers.
+  - Change hero color (green → purple): Change "from-[#001a05]" and 
+    "border-green-500/20" and "bg-green-500/10" colors.
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 14: app/search/page.tsx
+PURPOSE: The /search page (e.g. /search?q=samsung)
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT IT DOES:
+  Reads the 'q' query parameter from the URL and calls searchProducts(q)
+  which searches Contentstack for products matching that term.
+
+  After getting results, shows category filter pills at the top so the user
+  can narrow down within a category (e.g., "Mobiles (3)").
+
+  Three states:
+  1. No query    → Shows "Start Searching" with quick-links to popular categories
+  2. No results  → Shows "No products found" with category suggestions
+  3. Has results → Shows product grid with category filter pills
+
+  The search uses Contentstack's .regex() method which does a case-insensitive
+  pattern match on the product title. If that fails, it falls back to fetching
+  all products and filtering them in JavaScript.
+
+TO CHANGE:
+  - Search by more fields (brand, tags): Edit the searchProducts() function in
+    lib/contentstack.ts. The fallback filter already checks brand and tags.
+  - Add a search bar on this page: Add a <form> with an <input> that
+    submits to /search?q=<value>.
+  - Change quick-link categories: Find the hardcoded array 
+    ["mobiles", "laptops", "headphones", "speakers"] and edit it.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 2: WHAT WAS CHANGED (UPDATED FILES)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+10 existing files were modified. Here is what changed in each one.
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 1:  types/index.ts
+CHANGE:  Extended Product type + 4 new interfaces
+────────────────────────────────────────────────────────────────────────────────
+
+BEFORE: Product had 14 fields.
+AFTER:  Product now has 23 fields. The 9 new fields are:
+
+  rating          (number)   → Average star rating, e.g., 4.3
+  review_count    (number)   → Total number of reviews
+  is_best_seller  (boolean)  → Marks product as a best seller
+  is_featured     (boolean)  → Show in featured section
+  is_new_arrival  (boolean)  → Show in new arrivals
+  sale_ends_at    (string)   → ISO date-time for countdown timer
+  sponsored       (boolean)  → Shows "Ad" label on product card
+  brand           (string)   → Brand name, e.g., "Samsung"
+  delivery_days   (number)   → Estimated delivery in N days
+
+4 new interfaces were added:
+  Review         → for customer review entries in Contentstack
+  Banner         → for hero banner entries in Contentstack
+  Deal           → for deal entries in Contentstack
+  CategoryPage   → for category page entries in Contentstack
+
+TO CHANGE:
+  - Add a new field to Product: Add it here first, then add it to the
+    Contentstack product content type, then use it in your components.
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 2:  lib/contentstack.ts
+CHANGE:  8 new fetch functions added
+────────────────────────────────────────────────────────────────────────────────
+
+BEFORE: 8 functions (blog, author, product basics)
+AFTER:  16 functions. The 8 new ones:
+
+  getBestSellers(limit?)      → Products with is_best_seller = true
+  getFeaturedProducts(limit?) → Products with is_featured = true
+  getNewArrivals(limit?)      → Products with is_new_arrival = true
+  searchProducts(query)       → Regex search on product title + fallback filter
+  getReviews(productUid)      → All reviews for a specific product
+  getAllReviews()              → All review entries
+  getBanners()                → Active banners, sorted by sort_order
+  getDeals()                  → Active deals with product reference included
+  getCategoryPages()          → Active category pages, sorted by sort_order
+
+Every new function is wrapped in try/catch and returns an empty array on
+failure. This means if a content type doesn't exist yet in Contentstack,
+the website still works — it just shows empty sections or fallback UI.
+
+TO CHANGE:
+  - Change how many best sellers are returned by default: Edit the default
+    parameter in getBestSellers(limit = 8) — change 8 to any number.
+  - Add filtering by price range: In getAllProducts(), add another
+    (q as any).greaterThan("price", minPrice) call.
+  - Change the search logic: Edit the searchProducts() function. The primary
+    search uses .regex("title", queryStr, "i"). You can add more fields like:
+    .regex("brand", queryStr, "i") but note Contentstack only allows one
+    regex condition per query without using logical operators.
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 3:  app/globals.css
+CHANGE:  New animations and utility classes
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT WAS ADDED:
+  @keyframes slideLeft    → Used by the cart drawer sliding in from right
+  @keyframes slideUp      → Available for modals
+  @keyframes pulse-glow   → Glow animation for animated buttons
+  @keyframes shimmer      → Skeleton loading animation
+
+  .animate-slide-left     → Class that applies slideLeft animation
+  .animate-slide-up       → Class that applies slideUp animation
+  .animate-pulse-glow     → Class for pulsing glow
+  .shimmer                → Class for loading skeleton effect
+
+  .star-filled            → Amber color + glow for filled stars
+  .star-empty             → Dim purple for empty stars
+
+TO CHANGE:
+  - Change cart drawer animation speed: Find "0.35s" in .animate-slide-left
+    and change to 0.2s (faster) or 0.5s (slower).
+  - Change star colors: Edit .star-filled { color: #fbbf24; } to any hex color.
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 4:  components/ProductCard.tsx
+CHANGE:  Real ratings, Add to Cart, new badges, brand display
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT CHANGED:
+
+  BEFORE: Stars were fake (★★★★ with hardcoded review counts using
+          Math.random() which caused hydration errors in Next.js)
+
+  AFTER:  Stars use the real StarRating component with product.rating field.
+          If product has no rating, stars are hidden entirely.
+
+  NEW: ProductBadges helper function shows:
+    - 🏆 Best Seller (if is_best_seller = true in Contentstack)
+    - 🆕 New (if is_new_arrival = true in Contentstack)
+    - #1 #2 #3 rank badges (passed via the new 'rank' prop)
+    - Custom badge (existing badge field, if no other badge applies)
+
+  NEW: DiscountBadge shows "−40%" in red on the image when compare_price > price
+
+  NEW: Brand name displayed above the product title (from product.brand)
+
+  NEW: Delivery info replaced with product.delivery_days if set in Contentstack.
+       Falls back to "Free Hyper-Delivery" if not set.
+
+  NEW: The "Initiate Purchase" button replaced with <AddToCartButton> which
+       uses the global cart. This is why the cart actually works now.
+
+  NEW: ListCard now also has an Add to Cart button (fullWidth=false).
+
+TO CHANGE:
+  - Remove "Add to Cart" from grid cards: Replace <AddToCartButton product={p} />
+    with a simple <Link href={`/products/${p.uid}`}>View Product</Link>.
+  - Change "NEX+" label: Find 'NEX+' in the JSX and change the text.
+  - Change image height: Find "h-[200px]" in GridCard and change the number.
+  - Add a "Quick View" modal: Add a button in the card that opens a modal
+    with the product details without navigating away.
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 5:  components/Navbar.tsx
+CHANGE:  Search form, cart badge, new navigation links
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT CHANGED:
+
+  NEW: Search form (was just visual before)
+    - The search input now has an onSubmit handler
+    - Pressing Enter or clicking the search button navigates to /search?q=<term>
+    - After submitting, the input clears automatically
+
+  NEW: Cart icon in the top nav
+    - Shows total item count as a pink badge (updates in real time)
+    - Clicking opens the CartDrawer
+    - Different on mobile (icon only) vs desktop (icon + "Cart" text)
+
+  NEW: Sub-navigation links added:
+    - 🔥 Deals     → /deals
+    - 🏆 Best Sellers → /best-sellers
+    - 🆕 New Arrivals → /new-arrivals
+    - Blog         → /blog
+    - Dynamic category links (same as before, from Contentstack)
+
+  NEW: "Deliver to Bengaluru 560001" section (purely visual, not functional)
+
+TO CHANGE:
+  - Change delivery location text: Find "Bengaluru 560001" and change it.
+  - Change the logo text: Find "NexStore" in the JSX and change it.
+  - Change sub-nav link colors: Find the Deals link and change "text-red-400/80"
+    to any Tailwind color.
+  - Add a "Sign In" button: Replace the "Account" div with a <Link href="/login">
+    component.
+  - Remove the delivery section: Delete the entire div containing "Delivering to".
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 6:  app/layout.tsx
+CHANGE:  CartProvider + CartDrawer added, footer upgraded
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT CHANGED:
+
+  NEW: <CartProvider> wraps the entire <body>
+    This makes the cart state accessible everywhere on the site.
+    The CartDrawer is rendered once here so it appears on every page.
+
+  NEW: <CartDrawer /> is placed inside CartProvider
+    It only renders its HTML when isOpen = true (controlled by CartContext).
+
+  CHANGED: Footer completely rebuilt
+    BEFORE: Minimal text-only footer
+    AFTER:  4-column grid footer with sections:
+      - Shop (Deals, Best Sellers, New Arrivals, All Products)
+      - Help (Returns, Customer Service, Track Package)
+      - Discover (Blog, Authors, Products)
+      - About (brief description)
+    Bottom row: copyright + legal links
+
+TO CHANGE:
+  - Change footer links: Find the footer section and edit the arrays of
+    link label/href pairs.
+  - Change copyright name: Find "NexStore.in" in the footer and change it.
+  - Add Google Fonts: Import them in the font declarations at the top
+    alongside the existing Geist font imports.
+  - Remove the footer entirely: Delete everything between <footer> and </footer>.
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 7:  app/page.tsx (Homepage)
+CHANGE:  Complete rebuild with 6 new sections
+────────────────────────────────────────────────────────────────────────────────
+
+BEFORE: Just a sidebar + product grid with category filter.
+
+AFTER: The page now has these sections in order:
+
+  1. HERO BANNER (HeroBanner component)
+     Auto-sliding carousel. Data from Contentstack 'banner' type.
+     Falls back to 3 animated banners if none exist.
+
+  2. SHOP BY CATEGORY (CategoryGrid component)
+     Icon grid. Data from Contentstack 'category_page' type.
+     Falls back to 12 hardcoded categories.
+
+  3. DEALS OF THE DAY (DealCard grid) — only shows if deals exist
+     4-column grid. Data from Contentstack 'deal' type.
+     Has "View All →" link to /deals.
+
+  4. BEST SELLERS (horizontal scroll carousel) — only shows if any exist
+     Horizontal scrollable row of product cards.
+     Data from Contentstack products with is_best_seller = true.
+     Has "View All →" link to /best-sellers.
+
+  5. NEW ARRIVALS (product grid) — only shows if any exist
+     5-column grid showing up to 5 products.
+     Data from Contentstack products with is_new_arrival = true.
+     Has "View All →" link to /new-arrivals.
+
+  6. RESULTS BAR (sort dropdown + result count)
+     Shows "1–N of N results for 'category'" or "all products".
+
+  7. LEFT SIDEBAR + PRODUCT GRID (same as before, improved)
+     Sidebar: User Rating filter, Delivery, Availability, Deals link, Category links
+     Grid: 4-column product grid filtered by selected category
+
+  NEW DATA FETCHED: banners, categoryPages, deals, bestSellers, newArrivals
+  (all with .catch(() => []) so failures are silent and won't break the page)
+
+TO CHANGE:
+  - Change number of columns in Best Sellers carousel: Currently each card
+    is "w-[220px]" fixed width. Change this number.
+  - Show fewer New Arrivals on homepage: Change .slice(0, 5) to .slice(0, 4).
+  - Remove the NEX+ Prime banner: Delete the entire "Prime banner" div block.
+  - Change the sidebar rating filter to actually work: Currently it's visual only.
+    To make it work, add a 'minRating' searchParam and filter products by rating.
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 8:  app/products/[uid]/page.tsx (Product Detail Page)
+CHANGE:  Reviews, sale timer, badges, cart, wishlist, breadcrumbs
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT CHANGED:
+
+  NEW: Breadcrumb navigation at the top
+    Home › Products › Category › Product Name
+    Each item is a clickable link.
+
+  NEW: Sale timer banner
+    If product.sale_ends_at is set in Contentstack, a red banner appears
+    at the top showing "🔥 Lightning Deal — Limited Time!" with a live
+    countdown timer.
+
+  NEW: Product badges on the main image
+    🏆 Best Seller (amber pill)
+    🆕 New Arrival (green pill)
+    Custom badge (fuchsia pill)
+    −40% discount badge (red circle, top right)
+
+  NEW: Real star rating with review count link
+    "★★★★½  4.3  (1,204 reviews)" with link to #reviews section
+
+  NEW: Brand pill next to category
+    Shows if product.brand is set in Contentstack.
+
+  NEW: Delivery estimate box
+    Shows "Delivery in 2 days" from product.delivery_days, or
+    defaults to "Tomorrow by 11:00 AM" if not set.
+
+  NEW: Add to Cart button
+    Uses <AddToCartButton> component — adds to cart and opens drawer.
+
+  NEW: Wishlist button
+    Visual only (no backend). Shows "♡ Add to Wishlist".
+
+  NEW: Reviews section (#reviews)
+    Shows a rating breakdown panel (5★ / 4★ / etc. with progress bars)
+    and a list of ReviewCards fetched from Contentstack.
+    The reviews section shows empty state instructions if no reviews exist.
+
+TO CHANGE:
+  - Make Wishlist functional: Add a wishlist state to CartContext (or a
+    separate WishlistContext), connect it to localStorage.
+  - Change the breadcrumb separator: Find "›" in the JSX and change it
+    to "/" or ">" or any character.
+  - Show more related products: Change .slice(0, 4) to .slice(0, 8).
+  - Add a "Questions & Answers" section: Add a new Contentstack content type
+    'product_qa' and fetch + display it below reviews.
+
+
+────────────────────────────────────────────────────────────────────────────────
+FILE 9:  app/products/page.tsx (Products Listing)
+CHANGE:  Category pills + grid/list view toggle
+────────────────────────────────────────────────────────────────────────────────
+
+WHAT CHANGED:
+  - Added a page header with category pill tabs (All / Mobiles / Laptops / etc.)
+  - Added a grid/list view toggle (square grid icon / horizontal list icon)
+  - The view state is stored in the URL (?view=grid or ?view=list)
+  - Added a sort dropdown (currently visual only)
+
+TO CHANGE:
+  - Make sorting actually work: The sort dropdown currently has no effect.
+    To implement, add a 'sort' searchParam and sort the products array
+    before passing to the grid.
+  - Remove the list view toggle: Delete the grid/list toggle div block.
+  - Change number of grid columns: Find "grid-cols-2 sm:grid-cols-3 md:grid-cols-4
+    lg:grid-cols-5" and change the numbers.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 3: QUICK REFERENCE — "I WANT TO CHANGE X, WHICH FILE DO I EDIT?"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+VISUAL & BRANDING
+─────────────────
+  Logo name                → components/Navbar.tsx, find "NexStore"
+  Site title in browser tab → app/layout.tsx, find 'title:' in metadata object
+  Primary color (neon purple) → app/globals.css, body { background-color }
+  Accent color (cyan)      → Used via Tailwind class "text-cyan-400" throughout
+  Font                     → app/layout.tsx, the Geist / Geist_Mono imports
+  Star color               → app/globals.css, .star-filled { color: }
+  Footer text/links        → app/layout.tsx, find the <footer> tag
+
+PRICES & CURRENCY
+─────────────────
+  Currency symbol (₹ → $)  → Change in EACH of these files individually:
+                              components/CartDrawer.tsx (CURRENCY object, line ~6)
+                              components/ProductCard.tsx (CURRENCY object, line ~5)
+                              components/DealCard.tsx   (CURRENCY object, line ~6)
+                              app/products/[uid]/page.tsx (CURRENCY, line ~33)
+  Number format (en-IN)    → Change the locale string in the same CURRENCY objects
+
+HOMEPAGE SECTIONS
+─────────────────
+  Hero banner content      → Add 'banner' entries in Contentstack, OR
+                              edit FALLBACK array in components/HeroBanner.tsx
+  Banner slide speed       → components/HeroBanner.tsx, find "4_500"
+  Category grid icons      → Add 'category_page' entries in Contentstack, OR
+                              edit FALLBACK array in components/CategoryGrid.tsx
+  Add/remove a section     → app/page.tsx (add/delete the relevant <section> block)
+  Best Sellers limit       → app/page.tsx, change getBestSellers(8) → getBestSellers(N)
+  New Arrivals limit       → app/page.tsx, change newArrivals.slice(0, 5) → .slice(0, N)
+  Sidebar filters          → app/page.tsx, find "STATIC_SIDEBAR" array and edit it
+
+PRODUCT CARDS
+─────────────
+  Card image height        → components/ProductCard.tsx, GridCard function, "h-[200px]"
+  Add to Cart button text  → components/ProductCard.tsx, <AddToCartButton label="..." />
+  Show/hide brand name     → components/ProductCard.tsx, the p.brand conditional
+  Show/hide "NEX+" badge   → components/ProductCard.tsx, find 'NEX+' and delete/edit
+  Delivery text            → components/ProductCard.tsx, "Free Hyper-Delivery"
+
+PRODUCT DETAIL PAGE
+────────────────────
+  Breadcrumbs              → app/products/[uid]/page.tsx, the <nav> at the top
+  Sale timer               → app/products/[uid]/page.tsx, the "Sale timer banner" block
+  Add to Cart button       → app/products/[uid]/page.tsx, the <AddToCartButton> usage
+  Reviews section          → app/products/[uid]/page.tsx, the <section id="reviews">
+  Related products count   → app/products/[uid]/page.tsx, .slice(0, 4) → change 4
+
+CART DRAWER
+───────────
+  Cart width               → components/CartDrawer.tsx, "max-w-[420px]"
+  Cart background          → components/CartDrawer.tsx, "bg-[#0d0520]"
+  Checkout button          → components/CartDrawer.tsx, find "Proceed to Checkout"
+  Add coupon code field    → components/CartDrawer.tsx, add inside the footer div
+
+NAVIGATION
+──────────
+  Sub-nav links            → components/Navbar.tsx, the "Fixed feature links" section
+  Search categories dropdown → components/Navbar.tsx, the <select> inside the <form>
+  Delivery location        → components/Navbar.tsx, find "Bengaluru 560001"
+
+PAGES
+─────
+  Deals page hero          → app/deals/page.tsx, the "Hero" div section
+  Best Sellers rank badges → app/best-sellers/page.tsx, the i===0/1/2 color logic
+  New Arrivals grid columns → app/new-arrivals/page.tsx, "grid-cols-2 sm:grid-cols-3..."
+  Search quick links       → app/search/page.tsx, the hardcoded array ["mobiles",...]
+
+CONTENTSTACK DATA
+─────────────────
+  All Contentstack API calls → lib/contentstack.ts
+  Add a new fetch function   → lib/contentstack.ts, copy an existing function pattern
+  Add a new product field    → 1) Add field in Contentstack CMS
+                               2) Add to Product interface in types/index.ts
+                               3) Use it in the component where you want to display it
+  Change revalidation time   → Each page file, find "export const revalidate = 60"
+                               Change 60 to any number of seconds (0 = always fresh)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 4: CONTENTSTACK SETUP GUIDE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+To unlock each feature, do the following in your Contentstack dashboard:
+
+────────────────────────────────────────────────────────────────────────────────
+STEP 1: Add new fields to the EXISTING 'product' content type
+────────────────────────────────────────────────────────────────────────────────
+
+Go to: Content Models → product → Edit
+
+Add these fields one by one:
+
+  Field Label        | UID             | Type     | Note
+  ─────────────────────────────────────────────────────────
+  Rating             | rating          | Number   | Values: 1.0 to 5.0
+  Review Count       | review_count    | Number   | Total number of reviews
+  Is Best Seller     | is_best_seller  | Boolean  | Enables /best-sellers
+  Is Featured        | is_featured     | Boolean  | For featured sections
+  Is New Arrival     | is_new_arrival  | Boolean  | Enables /new-arrivals
+  Sale Ends At       | sale_ends_at    | Date     | Enables countdown timer
+  Brand              | brand           | Text     | e.g., Samsung, Apple
+  Delivery Days      | delivery_days   | Number   | e.g., 2
+  Sponsored          | sponsored       | Boolean  | Shows "Ad" label
+
+After adding, go to each product entry you want to affect and fill in the fields.
+
+────────────────────────────────────────────────────────────────────────────────
+STEP 2: Create the 'review' content type (for customer reviews)
+────────────────────────────────────────────────────────────────────────────────
+
+Go to: Content Models → + New Content Type
+  Name: Review
+  UID:  review
+
+Add these fields:
+  title            | Short text  | Required
+  product_uid      | Short text  | Put the product's UID here (copy from product entry URL)
+  reviewer_name    | Short text  | Required
+  rating           | Number      | 1 to 5
+  review_body      | Rich text   | The full review text
+  verified_purchase| Boolean     | Shows green "Verified Purchase" badge
+  helpful_count    | Number      | Number of helpful votes
+  published_date   | Date        | When the review was written
+
+To add a review: Create a new 'review' entry, set product_uid to the exact
+UID of the product (visible in the URL when editing the product entry).
+
+────────────────────────────────────────────────────────────────────────────────
+STEP 3: Create the 'banner' content type (for the hero carousel)
+────────────────────────────────────────────────────────────────────────────────
+
+Go to: Content Models → + New Content Type
+  Name: Banner
+  UID:  banner
+
+Add these fields:
+  title           | Short text  | Required
+  subtitle        | Short text  |
+  desktop_image   | File        | Upload a banner image (1920×500 px recommended)
+  mobile_image    | File        | Upload a mobile version (optional)
+  cta_label       | Short text  | Button text, e.g., "Shop Now"
+  cta_url         | Short text  | Button link, e.g., "/deals"
+  badge_text      | Short text  | e.g., "Up to 60% Off"
+  active          | Boolean     | Must be true to show the banner
+  sort_order      | Number      | Lower number = shows first
+
+Create 1–3 banner entries, set active = true, and they'll replace the
+animated fallback banners on the homepage.
+
+────────────────────────────────────────────────────────────────────────────────
+STEP 4: Create the 'deal' content type (for Deals of the Day)
+────────────────────────────────────────────────────────────────────────────────
+
+Go to: Content Models → + New Content Type
+  Name: Deal
+  UID:  deal
+
+Add these fields:
+  title           | Short text  | e.g., "Deal of the Day"
+  product         | Reference   | Reference type → select 'product' content type
+  deal_price      | Number      | The discounted price
+  ends_at         | Date/Time   | When the deal expires (countdown timer uses this)
+  active          | Boolean     | Must be true to show the deal
+
+Create a deal entry, link it to a product, set a deal_price lower than
+the product price, set ends_at to a future date/time, set active = true.
+
+────────────────────────────────────────────────────────────────────────────────
+STEP 5: Create the 'category_page' content type (for the category grid)
+────────────────────────────────────────────────────────────────────────────────
+
+Go to: Content Models → + New Content Type
+  Name: Category Page
+  UID:  category_page
+
+Add these fields:
+  title           | Short text  | e.g., "Mobiles"
+  slug            | Short text  | URL-safe text, e.g., "mobiles"
+  icon            | Short text  | An emoji, e.g., "📱"
+  banner_image    | File        | Category banner image (optional)
+  description     | Short text  | Short description
+  sort_order      | Number      | Display order
+  active          | Boolean     | Must be true to show the category
+
+Create entries for: Mobiles, Laptops, Headphones, Speakers
+Set active = true for each one. They'll replace the fallback categories.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 5: FILE STRUCTURE OVERVIEW (FINAL STATE)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/nexcms-website
+ ├── .env.local                    ← API keys (do not share this file)
+ ├── next.config.ts                ← Image domains config (Contentstack CDN)
+ │
+ ├── /types
+ │    └── index.ts                 ← ALL type definitions (Product, Review, etc.)
+ │
+ ├── /lib
+ │    └── contentstack.ts          ← ALL data fetch functions (16 total)
+ │
+ ├── /contexts                     ← NEW FOLDER
+ │    └── CartContext.tsx          ← NEW: Cart state management
+ │
+ ├── /components
+ │    ├── Navbar.tsx               ← UPDATED: search, cart, new nav links
+ │    ├── ProductCard.tsx          ← UPDATED: real stars, cart, badges
+ │    ├── AddToCartButton.tsx      ← NEW: "Add to Cart" client button
+ │    ├── StarRating.tsx           ← NEW: accurate star display
+ │    ├── ReviewCard.tsx           ← NEW: customer review card
+ │    ├── SectionHeader.tsx        ← NEW: reusable section titles
+ │    ├── SaleTimer.tsx            ← NEW: live countdown timer
+ │    ├── CategoryGrid.tsx         ← NEW: category icon grid
+ │    ├── DealCard.tsx             ← NEW: deal card with countdown
+ │    ├── HeroBanner.tsx           ← NEW: auto-sliding hero carousel
+ │    └── CartDrawer.tsx           ← NEW: slide-out cart panel
+ │
+ └── /app
+      ├── globals.css              ← UPDATED: new animations + star classes
+      ├── layout.tsx               ← UPDATED: CartProvider, CartDrawer, footer
+      ├── page.tsx                 ← UPDATED: full homepage rebuild
+      │
+      ├── /products
+      │    ├── page.tsx            ← UPDATED: category pills, view toggle
+      │    └── /[uid]
+      │         └── page.tsx       ← UPDATED: reviews, timer, cart, badges
+      │
+      ├── /deals                   ← NEW FOLDER
+      │    └── page.tsx            ← NEW: deals page
+      │
+      ├── /best-sellers            ← NEW FOLDER
+      │    └── page.tsx            ← NEW: best sellers page
+      │
+      ├── /new-arrivals            ← NEW FOLDER
+      │    └── page.tsx            ← NEW: new arrivals page
+      │
+      └── /search                  ← NEW FOLDER
+           └── page.tsx            ← NEW: search results page
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 6: HOW THE DATA FLOWS (END TO END)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  You update data in Contentstack
+          ↓
+  Contentstack stores it in their cloud
+          ↓
+  Next.js server fetches it via lib/contentstack.ts
+  (fetches are cached for 60 seconds — see "revalidate = 60")
+          ↓
+  Data is passed as props to page components (app/page.tsx, etc.)
+          ↓
+  Page components pass data to UI components (ProductCard, DealCard, etc.)
+          ↓
+  User sees the updated content on the website
+
+To make changes appear faster: Change "export const revalidate = 60" to
+"export const revalidate = 10" (10 seconds) or "0" (always fresh, slower).
+
+To make changes appear instantly: Use Contentstack Webhooks to trigger
+Next.js cache revalidation via the /api/revalidate route (advanced feature).
+
+
+================================================================================
+END OF DOCUMENT
+================================================================================

@@ -1,11 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // NexCMS – Contentstack type definitions
 // ─────────────────────────────────────────────────────────────────────────────
-// To add a new content type:
-//  1. Define its interface here
-//  2. Add a fetch fn in lib/contentstack.ts
-//  3. Create the page/component in app/
-// ─────────────────────────────────────────────────────────────────────────────
 
 export interface CSFile {
   url: string;
@@ -35,37 +30,20 @@ export interface BlogPost {
   url: string;
   featured_image: CSFile;
   published_date: string;
-  content: string;        // rich text HTML
+  content: string;
   excerpt?: string;
   tags?: string[];
   category?: string;
-  read_time?: number;     // minutes – set manually in CMS
+  read_time?: number;
   author: Author | Author[];
 }
 
 // ── Product ───────────────────────────────────────────────────────────────────
-// Contentstack content type UID: "product"
-// Required fields in Contentstack:
-//   title        (String)
-//   uid          (auto)
-//   slug         (String – used in URL)
-//   description  (Rich Text)
-//   short_desc   (String  – card excerpt)
-//   price        (Number  – base price in INR/USD, set currency in CONFIG)
-//   compare_price (Number – strike-through price, optional)
-//   images       (File[]  – first image = primary)
-//   category     (String  – e.g. "SaaS", "Plugin", "Template")
-//   tags         (String[])
-//   in_stock     (Boolean)
-//   badge        (String  – e.g. "New", "Sale", "Popular")
-//   features     (Group[] → { label: String, value: String })
-//   cta_label    (String  – button text, default "Buy Now")
-//   cta_url      (String  – external checkout / Gumroad / etc.)
 export interface Product {
   uid: string;
   title: string;
   slug: string;
-  description: string;    // rich text HTML
+  description: string;
   short_desc: string;
   price: number;
   compare_price?: number;
@@ -77,6 +55,79 @@ export interface Product {
   features?: { label: string; value: string }[];
   cta_label?: string;
   cta_url?: string;
+  // ── New fields (add these in Contentstack) ─────────────────────────────────
+  rating?: number;           // Number 1–5, e.g. 4.3
+  review_count?: number;     // Total reviews
+  is_best_seller?: boolean;  // Marks product as best seller
+  is_featured?: boolean;     // Shows on homepage hero section
+  is_new_arrival?: boolean;  // Shows in New Arrivals
+  sale_ends_at?: string;     // ISO date-time string – enables countdown timer
+  sponsored?: boolean;       // Shows "Sponsored" label
+  brand?: string;            // e.g. "Samsung", "Apple"
+  delivery_days?: number;    // e.g. 2 for "Delivery in 2 days"
+}
+
+// ── Review ────────────────────────────────────────────────────────────────────
+// Contentstack content type UID: "review"
+// Fields: title, product_uid (String), reviewer_name (String),
+//         rating (Number), review_body (Rich text), verified_purchase (Boolean),
+//         helpful_count (Number), published_date (Date)
+export interface Review {
+  uid: string;
+  title: string;
+  product_uid: string;
+  reviewer_name: string;
+  rating: number;
+  review_body?: string;
+  verified_purchase?: boolean;
+  helpful_count?: number;
+  published_date?: string;
+}
+
+// ── Banner ────────────────────────────────────────────────────────────────────
+// Contentstack content type UID: "banner"
+// Fields: title, subtitle (String), desktop_image (File), mobile_image (File),
+//         cta_label (String), cta_url (String), badge_text (String),
+//         active (Boolean), sort_order (Number)
+export interface Banner {
+  uid: string;
+  title: string;
+  subtitle?: string;
+  desktop_image: CSFile;
+  mobile_image?: CSFile;
+  cta_label?: string;
+  cta_url?: string;
+  badge_text?: string;
+  active: boolean;
+  sort_order?: number;
+}
+
+// ── Deal ──────────────────────────────────────────────────────────────────────
+// Contentstack content type UID: "deal"
+// Fields: title, product (Reference → product), deal_price (Number),
+//         ends_at (Date/Time), active (Boolean)
+export interface Deal {
+  uid: string;
+  title: string;
+  product: Product;
+  deal_price: number;
+  ends_at?: string;
+  active: boolean;
+}
+
+// ── CategoryPage ──────────────────────────────────────────────────────────────
+// Contentstack content type UID: "category_page"
+// Fields: title, slug (String), icon (String – emoji), banner_image (File),
+//         description (String), sort_order (Number), active (Boolean)
+export interface CategoryPage {
+  uid: string;
+  title: string;
+  slug: string;
+  icon?: string;
+  banner_image?: CSFile;
+  description?: string;
+  sort_order?: number;
+  active: boolean;
 }
 
 // ── Shared pagination helper ───────────────────────────────────────────────────

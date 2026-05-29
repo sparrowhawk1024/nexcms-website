@@ -1,29 +1,28 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // lib/contentstack.ts  –  SDK init + typed fetch helpers
 // ─────────────────────────────────────────────────────────────────────────────
-// HOW TO ADD A NEW CONTENT TYPE
-// 1. Define its interface in types/index.ts
-// 2. Copy one of the fetch patterns below and swap the content_type uid
-// 3. Add the relevant references in .includeReference([...]) if needed
-// ─────────────────────────────────────────────────────────────────────────────
 
 import Contentstack from "contentstack";
-import type { Author, BlogPost, Product, PaginatedResult } from "@/types";
+import type {
+  Author,
+  BlogPost,
+  Product,
+  PaginatedResult,
+  Review,
+  Banner,
+  Deal,
+  CategoryPage,
+} from "@/types";
 
 // ── Stack config ──────────────────────────────────────────────────────────────
-// Env variables are read at build time for static pages and at request time for
-// dynamic segments. Set them in .env.local (never commit real tokens).
 const stack = Contentstack.Stack({
-  api_key:          process.env.CONTENTSTACK_API_KEY!,
-  delivery_token:   process.env.CONTENTSTACK_DELIVERY_TOKEN!,
-  environment:      process.env.CONTENTSTACK_ENVIRONMENT ?? "development",
-  // Optional: uncomment to target a specific region
+  api_key:        process.env.CONTENTSTACK_API_KEY!,
+  delivery_token: process.env.CONTENTSTACK_DELIVERY_TOKEN!,
+  environment:    process.env.CONTENTSTACK_ENVIRONMENT ?? "development",
   region: Contentstack.Region.EU,
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Generic query helper – avoids repeating the promise dance everywhere
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Generic query helper ──────────────────────────────────────────────────────
 function query(ct: string) {
   return stack.ContentType(ct).Query();
 }
@@ -32,7 +31,6 @@ function query(ct: string) {
 // BLOG
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Fetch all published blog posts, sorted newest-first */
 export async function getAllBlogPosts(): Promise<BlogPost[]> {
   const result = await query("blog")
     .descending("published_date")
@@ -42,7 +40,6 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
   return result[0] as BlogPost[];
 }
 
-/** Fetch a single blog post by its URL slug */
 export async function getBlogPostByUrl(url: string): Promise<BlogPost | null> {
   const result = await query("blog")
     .where("url", url)
@@ -53,7 +50,6 @@ export async function getBlogPostByUrl(url: string): Promise<BlogPost | null> {
   return posts.length > 0 ? posts[0] : null;
 }
 
-/** Fetch N most recent posts (used on homepage) */
 export async function getRecentBlogPosts(limit = 6): Promise<BlogPost[]> {
   const result = await query("blog")
     .descending("published_date")
@@ -64,7 +60,6 @@ export async function getRecentBlogPosts(limit = 6): Promise<BlogPost[]> {
   return result[0] as BlogPost[];
 }
 
-/** Paginated blog listing */
 export async function getPaginatedBlogPosts(
   page = 1,
   limit = 9
@@ -100,18 +95,13 @@ export async function getAllAuthors(): Promise<Author[]> {
 
 export async function getAuthorByUid(uid: string): Promise<Author | null> {
   try {
-    const entry = await stack
-      .ContentType("author")
-      .Entry(uid)
-      .toJSON()
-      .fetch();
+    const entry = await stack.ContentType("author").Entry(uid).toJSON().fetch();
     return entry as Author;
   } catch {
     return null;
   }
 }
 
-/** Posts written by a specific author uid */
 export async function getBlogPostsByAuthor(authorUid: string): Promise<BlogPost[]> {
   const result = await query("blog")
     .where("author.uid", authorUid)
@@ -126,7 +116,6 @@ export async function getBlogPostsByAuthor(authorUid: string): Promise<BlogPost[
 // PRODUCTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Fetch all products – you can filter by category or in_stock */
 export async function getAllProducts(opts?: {
   category?: string;
   inStockOnly?: boolean;
@@ -144,7 +133,6 @@ export async function getAllProducts(opts?: {
   return result[0] as Product[];
 }
 
-/** Fetch a single product by its uid */
 export async function getProductByUid(uid: string): Promise<Product | null> {
   try {
     const entry = await stack
@@ -158,7 +146,6 @@ export async function getProductByUid(uid: string): Promise<Product | null> {
   }
 }
 
-/** Paginated product listing */
 export async function getPaginatedProducts(
   page = 1,
   limit = 12
@@ -179,9 +166,155 @@ export async function getPaginatedProducts(
   };
 }
 
-/** All unique product categories */
 export async function getProductCategories(): Promise<string[]> {
   const products = await getAllProducts();
   const cats = Array.from(new Set(products.map((p) => p.category).filter(Boolean)));
   return cats.sort();
+}
+
+/** Best sellers – products with is_best_seller = true */
+export async function getBestSellers(limit = 8): Promise<Product[]> {
+  try {
+    const result = await query("product")
+      .where("is_best_seller", true)
+      .limit(limit)
+      .toJSON()
+      .find();
+    return result[0] as Product[];
+  } catch {
+    return [];
+  }
+}
+
+/** Featured products – products with is_featured = true */
+export async function getFeaturedProducts(limit = 4): Promise<Product[]> {
+  try {
+    const result = await query("product")
+      .where("is_featured", true)
+      .limit(limit)
+      .toJSON()
+      .find();
+    return result[0] as Product[];
+  } catch {
+    return [];
+  }
+}
+
+/** New arrivals – products with is_new_arrival = true */
+export async function getNewArrivals(limit = 8): Promise<Product[]> {
+  try {
+    const result = await query("product")
+      .where("is_new_arrival", true)
+      .limit(limit)
+      .toJSON()
+      .find();
+    return result[0] as Product[];
+  } catch {
+    return [];
+  }
+}
+
+/** Search products by title/brand/tags */
+export async function searchProducts(queryStr: string): Promise<Product[]> {
+  try {
+    const result = await stack
+      .ContentType("product")
+      .Query()
+      .regex("title", queryStr, "i")
+      .toJSON()
+      .find();
+    return result[0] as Product[];
+  } catch {
+    // Fallback: fetch all and filter client-side
+    try {
+      const all = await getAllProducts();
+      const lower = queryStr.toLowerCase();
+      return all.filter(
+        (p) =>
+          p.title.toLowerCase().includes(lower) ||
+          p.category?.toLowerCase().includes(lower) ||
+          p.brand?.toLowerCase().includes(lower) ||
+          p.tags?.some((t) => t.toLowerCase().includes(lower))
+      );
+    } catch {
+      return [];
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REVIEWS  (content type uid: "review")
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getReviews(productUid: string): Promise<Review[]> {
+  try {
+    const result = await query("review")
+      .where("product_uid", productUid)
+      .descending("published_date")
+      .toJSON()
+      .find();
+    return result[0] as Review[];
+  } catch {
+    return [];
+  }
+}
+
+export async function getAllReviews(): Promise<Review[]> {
+  try {
+    const result = await query("review").descending("published_date").toJSON().find();
+    return result[0] as Review[];
+  } catch {
+    return [];
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BANNERS  (content type uid: "banner")
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getBanners(): Promise<Banner[]> {
+  try {
+    const result = await query("banner")
+      .where("active", true)
+      .ascending("sort_order")
+      .toJSON()
+      .find();
+    return result[0] as Banner[];
+  } catch {
+    return [];
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DEALS  (content type uid: "deal")
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getDeals(): Promise<Deal[]> {
+  try {
+    const result = await query("deal")
+      .where("active", true)
+      .includeReference(["product"])
+      .toJSON()
+      .find();
+    return result[0] as Deal[];
+  } catch {
+    return [];
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CATEGORY PAGES  (content type uid: "category_page")
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getCategoryPages(): Promise<CategoryPage[]> {
+  try {
+    const result = await query("category_page")
+      .where("active", true)
+      .ascending("sort_order")
+      .toJSON()
+      .find();
+    return result[0] as CategoryPage[];
+  } catch {
+    return [];
+  }
 }
