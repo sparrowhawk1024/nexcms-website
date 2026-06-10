@@ -7,6 +7,7 @@ import StarRating from "@/components/StarRating";
 import ReviewCard from "@/components/ReviewCard";
 import SaleTimer from "@/components/SaleTimer";
 import AddToCartButton from "@/components/AddToCartButton";
+import ProductViewTracker from "@/components/ProductViewTracker";
 import type { Metadata } from "next";
 
 export const revalidate = 60;
@@ -92,6 +93,8 @@ export default async function ProductDetailPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-[#0b0213]">
+      {/* Invisible tracker — fires personalization + analytics events client-side */}
+      <ProductViewTracker product={product} path={`/products/${uid}`} />
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
 
         {/* Breadcrumb */}

@@ -6,6 +6,7 @@ import CartDrawer from "@/components/CartDrawer";
 import CookieBanner from "@/components/CookieBanner";
 import { CartProvider } from "@/contexts/CartContext";
 import { CookieProvider } from "@/contexts/CookieContext";
+import { PersonalizationProvider } from "@/contexts/PersonalizationContext";
 import { getProductCategories } from "@/lib/contentstack";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
@@ -26,10 +27,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-screen bg-[#0b0213] text-[#e2d5f8] antialiased font-sans selection:bg-fuchsia-500/30">
         <CartProvider>
           <CookieProvider>
-            <Navbar categories={categories} />
-            <CartDrawer />
-            <CookieBanner />
-            <main>{children}</main>
+            <PersonalizationProvider>
+              <Navbar categories={categories} />
+              <CartDrawer />
+              <CookieBanner />
+              <main>{children}</main>
           <footer className="bg-black border-t border-fuchsia-500/30 shadow-[0_-5px_20px_rgba(217,70,239,0.1)] text-white py-14 mt-20 relative z-10">
             <div className="mx-auto max-w-[1500px] px-6">
               {/* Footer grid */}
@@ -102,6 +104,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
             </div>
           </footer>
+            </PersonalizationProvider>
           </CookieProvider>
         </CartProvider>
       </body>

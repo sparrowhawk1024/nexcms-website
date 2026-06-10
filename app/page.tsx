@@ -13,6 +13,8 @@ import HeroBanner from "@/components/HeroBanner";
 import CategoryGrid from "@/components/CategoryGrid";
 import DealCard from "@/components/DealCard";
 import SectionHeader from "@/components/SectionHeader";
+import RecentlyViewed from "@/components/RecentlyViewed";
+import PickedForYou from "@/components/PickedForYou";
 
 export const revalidate = 60;
 
@@ -125,6 +127,13 @@ export default async function HomePage(props: PageProps) {
             </div>
           </section>
         )}
+
+        {/* ── Personalisation Row: Recently Viewed ─────────────────────── */}
+        <RecentlyViewed />
+
+        {/* ── Personalisation Row: Picked for You ──────────────────────── */}
+        <PickedForYou allProducts={products} />
+
       </div>
 
       {/* ── Results bar ─────────────────────────────────────────────── */}
