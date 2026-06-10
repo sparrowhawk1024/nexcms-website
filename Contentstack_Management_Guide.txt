@@ -757,3 +757,135 @@ TROUBLESHOOTING
 ================================================================================
 END OF GUIDE (EXTENDED WITH WEBHOOK SETUP)
 ================================================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ADDENDUM: COOKIES, CONSENT & PERSONALIZATION ENGINE (localStorage-based)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This section details the client-side cookie consent compliance banner and the
+privacy-compliant personalization engine. All user choices, recently viewed history,
+and preferences are saved directly on the client (localStorage), requiring zero database
+storage and complying with global privacy requirements.
+
+────────────────────────────────────────────────────────────────────────────────
+1. COOKIE CONSENT ENGINE (HOW IT WORKS)
+────────────────────────────────────────────────────────────────────────────────
+
+The store features a premium, cyberpunk-styled floating Cookie Consent Banner.
+Cookies are divided into three categories:
+
+  Category            | Key        | Purpose
+  ────────────────────┼────────────┼────────────────────────────────────────────
+  Essential           | essential  | Always enabled. Powers cart, checkout, session.
+  Analytics           | analytics  | Optional. Controls tracking page-view counts.
+  Personalization     | marketing  | Optional. Controls recommendation rows & fav category highlights.
+
+Consent Rules:
+  - If a user rejects optional cookies, they are still shown the "Recently Viewed"
+    row (as it is considered basic user-experience utility), but the title is plain.
+  - If a user rejects personalization, the "Picked For You" recommendation section
+    is completely hidden, and category active glows are disabled.
+  - Analytics (page views) are only tracked if "analytics" is explicitly accepted.
+
+────────────────────────────────────────────────────────────────────────────────
+2. PERSONALIZATION ENGINE (HOW IT WORKS)
+────────────────────────────────────────────────────────────────────────────────
+
+A personalization context monitors user interactions:
+  - Product Views: Visiting a product detail page logs a snapshot of the product details
+    (last 12 products are stored in "nexstore_recently_viewed" in localStorage).
+  - Category Visit Count: Visits are tallied by category. The category with the
+    highest view count is dynamically computed as the "topCategory".
+  - Category Clicks: Clicks on categories from the home grid are tracked.
+  - Picked For You: Recommends 5 items in the user's "topCategory" that they haven't
+    already viewed, sorted by highest rating first. Only displays if they have viewed
+    at least 2 products and personalization (marketing) cookies are accepted.
+
+────────────────────────────────────────────────────────────────────────────────
+3. ARCHITECTURE & RELEVANT FILES (WHICH FILE TO CHANGE)
+────────────────────────────────────────────────────────────────────────────────
+
+  File Name & Path | Status | What it does / How to modify it
+  ─────────────────┼────────┼───────────────────────────────────────────────────
+  contexts/CookieContext.tsx
+                   | [NEW]  | Core state provider for cookie consent. Manages loading,
+                   |        | updating, and saving consent categories in localStorage.
+  components/CookieBanner.tsx
+                   | [NEW]  | The UI component for the consent banner and settings dialog.
+                   |        | Features glassmorphic neon design, responsive layout,
+                   |        | toggle buttons, and micro-animations.
+  contexts/PersonalizationContext.tsx
+                   | [NEW]  | React context managing recently viewed history, page views,
+                   |        | category visit counts, and top category detection.
+  components/ProductViewTracker.tsx
+                   | [NEW]  | Invisible client component placed on the product detail
+                   |        | page to fire view events under consent checks.
+  components/RecentlyViewed.tsx
+                   | [NEW]  | Horizontal scroll row showing recently viewed products.
+  components/PickedForYou.tsx
+                   | [NEW]  | recommendations grid that recommends unviewed products
+                   |        | from the user's top browsed category (gated by marketing consent).
+  components/CategoryGrid.tsx
+                   | [MODIFY]| Added tracker callback to category links. Highlights the
+                   |        | user's top category using a fuchsia glow and animated pulse dot.
+  app/layout.tsx
+                   | [MODIFY]| Wrapped core app with CookieProvider and PersonalizationProvider.
+                   |        | Mounted CookieBanner globally.
+  app/page.tsx
+                   | [MODIFY]| Mounted RecentlyViewed and PickedForYou components on the home page.
+  app/products/[uid]/page.tsx
+                   | [MODIFY]| Embedded ProductViewTracker into the product page.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ADDENDUM: BULK PRODUCT UPLOADER SCRIPT (50 PRODUCTS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+To populate the catalog with a rich variety of items, a custom Node.js script
+was created to bulk-upload 50 realistic products directly to Contentstack.
+
+────────────────────────────────────────────────────────────────────────────────
+1. UPLOAD SCRIPT DETAILS
+────────────────────────────────────────────────────────────────────────────────
+
+  - File Path:   upload-50-products.js
+  - Run Command: `node upload-50-products.js`
+  - Targets:     Contentstack Management API (Management Token and Stack API Key configured)
+
+────────────────────────────────────────────────────────────────────────────────
+2. DISTRIBUTIONS & SPECIFICATIONS
+────────────────────────────────────────────────────────────────────────────────
+
+  The script uploaded 50 highly detailed entries across 7 product categories:
+    - Mobiles (10)     ← Brand names (Apple, OnePlus, Google, Realme, Samsung, Motorola, etc.)
+    - Laptops (10)     ← Gaming & Professional (ASUS ROG, Spectre, XPS, MacBook, ThinkPad)
+    - Headphones (10)  ← Audio gear (Sony WH, Bose QC, Jabra, Marshall, Sennheiser)
+    - Speakers (5)     ← Portable sound (JBL, Sony, Marshall, Anker)
+    - Tablets (5)      ← AMOLED & Tandem OLED (iPad Pro M4, Galaxy Tab S9, OnePlus Pad)
+    - Wearables (5)    ← Smartwatches (Apple Watch S10, Galaxy Watch 7, Garmin)
+    - Accessories (5)  ← Peripherals (Logitech MX, Razer DeathAdder, Anker PowerCore)
+
+  Each product contains:
+    - Unique UID/Slug
+    - Description & short summary
+    - Indian Market Pricing (₹) with discount comparison values
+    - Ratings (3.8 - 4.9 stars) & Review counts
+    - Feature specification group containing specific hardware metrics
+    - Call to action (CTA) links targeting real external merchants (e.g. Amazon, Apple, Samsung)
+
+────────────────────────────────────────────────────────────────────────────────
+3. RUNNING AND RETRYING
+────────────────────────────────────────────────────────────────────────────────
+
+  To run or execute the upload script again (e.g., if content is reset):
+    1. Ensure your terminal has internet access.
+    2. Execute:
+         cd c:\Users\premc\Desktop\projects\nexstore\nexcms-website
+         node upload-50-products.js
+    3. The script prints live progress for each of the 50 items and registers them
+       in Contentstack. Once finished, publish the uploaded items in Contentstack.
+
+================================================================================
+END OF GUIDE (EXTENDED WITH COOKIES, PERSONALIZATION & BULK PRODUCTS)
+================================================================================
