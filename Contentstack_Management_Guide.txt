@@ -608,3 +608,152 @@ SUMMARY TABLE — ALL 5 CONTENT TYPES AT A GLANCE
 ================================================================================
 END OF GUIDE
 ================================================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DEPLOYMENT EXTENSION: CONTENTSTACK WEBHOOK → NEXSTORE AUTO-REVALIDATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+WHAT THIS IS:
+  NexStore uses Next.js "Incremental Static Regeneration" (ISR).
+  Pages are pre-built and served from cache for speed. By default they
+  refresh every 60 seconds. With the webhook extension, every time you
+  PUBLISH an entry in Contentstack, NexStore instantly clears the cache
+  for the right pages — no waiting, no manual deploys.
+
+  Contentstack → (entry published) → webhook POST → /api/revalidate → Next.js
+  cache cleared instantly → your live site shows new content within seconds.
+
+────────────────────────────────────────────────────────────────────────────────
+STEP 1: GENERATE A WEBHOOK SECRET
+────────────────────────────────────────────────────────────────────────────────
+
+  This secret prevents random people from clearing your site's cache.
+  Generate a strong random string. Options:
+
+  Method A (terminal):
+    node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+  Method B (online):
+    Visit https://generate-secret.vercel.app/32 and copy the result.
+
+  Example value:  a3f8e2c1d4b7a9f0e3c6b8a1d4f7e2c5a8b1d4e7f0a3c6b9d2e5f8
+
+  KEEP THIS SECRET PRIVATE. Never commit it to git.
+
+────────────────────────────────────────────────────────────────────────────────
+STEP 2: ADD THE SECRET TO YOUR ENVIRONMENT
+────────────────────────────────────────────────────────────────────────────────
+
+  A) Local development (.env.local):
+     Open .env.local and add:
+       CONTENTSTACK_WEBHOOK_SECRET=<your secret here>
+
+  B) Vercel (production):
+     Project Settings → Environment Variables → Add:
+       Name:  CONTENTSTACK_WEBHOOK_SECRET
+       Value: <your secret here>
+       Environments: Production, Preview
+
+  C) Netlify (production):
+     Site Settings → Build & Deploy → Environment → Add variable:
+       Key:   CONTENTSTACK_WEBHOOK_SECRET
+       Value: <your secret here>
+
+────────────────────────────────────────────────────────────────────────────────
+STEP 3: CONFIGURE THE WEBHOOK IN CONTENTSTACK
+────────────────────────────────────────────────────────────────────────────────
+
+  1. Log in to Contentstack → open your NexStore stack.
+  2. Go to: Settings → Webhooks → + New Webhook
+
+  Fill in the form:
+  ┌─────────────────────┬─────────────────────────────────────────────────────┐
+  │ Field               │ Value                                               │
+  ├─────────────────────┼─────────────────────────────────────────────────────┤
+  │ Webhook Name        │ NexStore ISR Revalidation                           │
+  │ URL                 │ https://your-domain.com/api/revalidate              │
+  │ Method              │ POST                                                │
+  │ Custom Header Name  │ x-webhook-secret                                    │
+  │ Custom Header Value │ <your secret from Step 1>                           │
+  └─────────────────────┴─────────────────────────────────────────────────────┘
+
+  Replace "your-domain.com" with:
+    - your Vercel URL:  nexstore-xyz.vercel.app
+    - your custom domain: nexstore.in
+
+  3. Under "Triggers", check these events:
+       ✅ Entry → Published
+       ✅ Entry → Unpublished
+       ✅ Entry → Deleted
+
+  4. Leave "Retry" enabled (3 retries recommended).
+
+  5. Click Save.
+
+────────────────────────────────────────────────────────────────────────────────
+STEP 4: TEST THE WEBHOOK
+────────────────────────────────────────────────────────────────────────────────
+
+  A) Health check (no secret needed):
+     Open in browser: https://your-domain.com/api/revalidate
+     You should see:
+       { "status": "ok", "service": "NexStore Contentstack revalidation webhook", ... }
+
+  B) Test from Contentstack:
+     Go to Settings → Webhooks → your webhook → "Send Test" button.
+     In the Contentstack response panel, you should see HTTP 200.
+
+  C) Test from terminal (PowerShell):
+     Invoke-WebRequest -Uri "https://your-domain.com/api/revalidate" `
+       -Method POST `
+       -Headers @{"x-webhook-secret"="<your-secret>"} `
+       -ContentType "application/json" `
+       -Body '{"event":"test"}'
+
+     Expected response:
+       { "revalidated": false, "message": "Test ping acknowledged." }
+
+────────────────────────────────────────────────────────────────────────────────
+WHICH PATHS GET REVALIDATED (by content type)
+────────────────────────────────────────────────────────────────────────────────
+
+  Content Type   | Paths Cleared on Publish
+  ───────────────┼────────────────────────────────────────────────────────────
+  product        | /, /products, /best-sellers, /new-arrivals, /deals, /search
+  review         | /
+  banner         | /
+  deal           | /, /deals
+  category_page  | /
+  blog           | /blog
+  author         | /authors, /blog
+
+  TIP: Dynamic product pages (/products/[uid]) are refreshed via ISR's
+  60-second window. To make them faster, reduce `revalidate = 60` to
+  `revalidate = 10` in app/products/[uid]/page.tsx.
+
+────────────────────────────────────────────────────────────────────────────────
+TROUBLESHOOTING
+────────────────────────────────────────────────────────────────────────────────
+
+  PROBLEM: Webhook returns 401 Unauthorised.
+  FIX:     The x-webhook-secret header value doesn't match CONTENTSTACK_WEBHOOK_SECRET.
+           Re-check both values are identical (no trailing spaces).
+           In Vercel, re-deploy after adding the env var.
+
+  PROBLEM: Webhook returns 500.
+  FIX:     CONTENTSTACK_WEBHOOK_SECRET is not set in your hosting environment.
+           Add it in Vercel/Netlify and redeploy.
+
+  PROBLEM: Site still shows old content after publishing.
+  FIX:     Check webhook delivery logs in Contentstack (Settings → Webhooks → Logs).
+           If the webhook fired but the page didn't update, try increasing the
+           revalidate interval by hard-refreshing (Ctrl+Shift+R).
+
+  PROBLEM: Test ping from Contentstack returns "Test ping acknowledged."
+  FIX:     This is correct behaviour — test pings have no JSON body, so no
+           revalidation runs. Real publish events will have a full payload.
+
+================================================================================
+END OF GUIDE (EXTENDED WITH WEBHOOK SETUP)
+================================================================================
